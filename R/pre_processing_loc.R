@@ -9,10 +9,15 @@ camera_sites <- list.files("./data", pattern = "CostaCT", full.names = T) |>
     SpatialPointsDataFrame(data.frame(x = w$gps_x, y = w$gps_y),
                                 data = w, 
                                 proj4string = crs_lat_long)
-  }, crs_lat_long)
+  }, crs_lat_long) |>
+  lapply(spTransform, CRS("+proj=utm +zone=17")) 
+save(camera_sites, file = "./clean_data/CT_loc.rda")
 
 jaguar <- read.csv("./data/JaguarEvents2015-2021_EDIT.csv") 
 jaguar <- SpatialPointsDataFrame(data.frame(x = jaguar$Trap.Station.Longitude, 
                                             y = jaguar$Trap.Station.Latitude),
                                  data = jaguar,
-                                 proj4string = crs_lat_long)
+                                 proj4string = crs_lat_long) |>
+  spTransform(CRS("+proj=utm +zone=17")) 
+  
+save(jaguar,file = "./clean_data/jaguar.rda")
