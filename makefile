@@ -1,3 +1,6 @@
+./res/scr_stan_fit.rda: ./clean_data/scr_stan_data.rda
+	Rscript ./R/run_SCR.R
+
 ./clean_data/scr_stan_data.rda: ./clean_data/jaguar_trap_mats_scr.rda
 	Rscript ./R/prepare_scr.R
 
