@@ -1,8 +1,16 @@
 library(sp)
 library(terra)
+library(sf)
 # We are at UTM-17N, 
 ## below for projection from WGS84, this is essential as distance is a thing here
 crs_lat_long <- CRS("+proj=longlat +datum=WGS84")
+
+if(!file.exists("./clean_data/lulc_2017.tif")){
+  lclu <- rast("./data/mask/NASA_OSA/lulc_2017.tif") |> 
+    terra::project(y = "+proj=utm +zone=17")
+  terra::writeRaster(lclu,"./clean_data/lulc_2017.tif")
+}
+
 camera_sites <- list.files("./data/Camera_loc", pattern = "CostaCT", full.names = T) |>
   lapply(read.csv) |>
   lapply(function(w, crs_lat_long){
