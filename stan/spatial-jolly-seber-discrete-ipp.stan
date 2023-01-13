@@ -47,8 +47,8 @@ parameters {
   vector<lower = 0,upper = 1>[Tm1] gamma;         // recruitment
   real<lower = 0, upper = 1> psi;                 // initial pr. of being alive
   real<lower = 0, upper = 1> phi;                 // survival
-  vector<lower = xlim[1], upper = xlim[2]>[T] sx[M]; // x-coordinates of activatiy centers 
-  vector<lower = ylim[1], upper = ylim[2]>[T] sy[M]; // y-coordinates of activatiy centers
+  //vector<lower = xlim[1], upper = xlim[2]>[T] sx[M]; // x-coordinates of activatiy centers 
+  //vector<lower = ylim[1], upper = ylim[2]>[T] sy[M]; // y-coordinates of activatiy centers
   //vector<lower = 1, upper = n_grid>[T] s[M]; // activity centers, on grid points
   real p0;
   real<lower = 0> alpha1;
@@ -87,7 +87,6 @@ transformed parameters {
   }
 
   { // begin local scope
-    vector[2] s;
     vector[n_trap + 1] logits;
     real acc[3];
     vector[3] gam[Tp1];
@@ -96,33 +95,23 @@ transformed parameters {
     vector[n_grid] log_mu; // log Poisson intensity, at pixels
     vector[n_grid] log_probs;
 
-    real min_dist = 1e20;
-    real sqrdist_tmp;
-    int min_dist_grid = 0;
 
     for (t in 1:T) {// loop over primary occasions first
       log_mu = envX[t] * beta_env + log_pixel_area;// intensity at that year
       log_probs = log_softmax(log_mu);
       for (i in 1:M) {
-        s[1] = sx[i, t];
-        s[2] = sy[i, t];
-        for (j in 1:n_grid) {
-          sqrdist_tmp = squared_distance(s, grid_pts[j, ])
-          if(sqrdist_tmp < min_dist){
-            min_dist = sqrdist_tmp;
-            min_dist_grid = i;
+        for (l in 1:n_grid) { // marginalize over activity centers
+          loglik[i] += log_probs[min_dist_grid];// add log prob of being at that pixel
+          for (j in 1:n_trap) {
+            po[t, 1, j] = 0; // not recruited
+            po[t, 3, j] = 0; // dead
+            logits[j] = log_p0 - alpha1 * sq_dist[l,j];// distance sampling 
           }
+          logits[n_trap + 1] = 0;
+          po[t, 1, n_trap + 1] = 1;
+          po[t, 3, n_trap + 1] = 1;
+          po[t, 2, ] = softmax(logits);
         }
-        loglik[i] += log_probs[min_dist_grid];// add log prob of being at that pixel
-        for (j in 1:n_trap) {
-          po[t, 1, j] = 0; // not recruited
-          po[t, 3, j] = 0; // dead
-          logits[j] = log_p0 - alpha1 * squared_distance(s, X[j, ]);// distance sampling 
-        }
-        logits[n_trap + 1] = 0;
-        po[t, 1, n_trap + 1] = 1;
-        po[t, 3, n_trap + 1] = 1;
-        po[t, 2, ] = softmax(logits);
       }
     }
     // Forward algorithm
