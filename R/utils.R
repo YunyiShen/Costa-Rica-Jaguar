@@ -34,6 +34,14 @@ SCR23darray <-
     y
   }
 
+
+
+
+
+
+
+
+## rest are for plotting
 plot_s <- function(individual, m_fit,...) {
   s_post <- rstan::extract(m_fit, pars = "s")$s
   s1_df <- as.data.frame(s_post[, individual, ])
@@ -44,6 +52,7 @@ plot_s <- function(individual, m_fit,...) {
   #plot(trap_sf[y2d[individual, ] > 0, ], pch = 19, add = TRUE)
   plot(s1_sf, col = scales::alpha("red", .05), pch = 19,...)
 }
+
 
 image.scale <-
   function (z, col, x, y = NULL, size = NULL, digits = 2, labels = c("breaks", 
