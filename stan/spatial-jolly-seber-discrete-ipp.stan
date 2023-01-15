@@ -150,12 +150,14 @@ transformed parameters {
         // change to alive
           // come from un-entered
         acc2[1] = gam[t - 1, 1] + log_recruit[t - 1];// recruited into
+          // come from alive
         acc2[2] = gam[t - 1, 2] + log_survival[t - 1];// survived
         acc2 += log_obs;
         gam[t, 2] = log_sum_exp_vec(acc2);
         // change to dead
           // come from alive
         acc3[1] = gam[t - 1, 2] + log1m_exp( log_survival[t - 1] );// dead last year
+          // come from dead
         acc3[2] = gam[t - 1, 3]; // dead can only be dead
         acc3 += log_obs_nothere; // should not see if dead
         gam[t, 3] = log_sum_exp_vec(acc3);
@@ -197,6 +199,9 @@ generated quantities {
     real log_obs;
     real log_obs_nothere; // more a place holder to check if we have seen an individual at a trap when it should NOT be seen
     vector[3] gam[Tp1];
+    vector int<lower = 1, upper = 3>[3] back_ptr[Tp1];
+
+    real logp_state; 
 
 
 
@@ -227,15 +232,17 @@ generated quantities {
       }
     } // end dealing with observation and activaty center
 
-    // FFBS for latent state
+    // Viterbi for latent state
     for (i in 1:M) {
       // All individuals are in state 1 (not recruited) at t=0, we work in log scale
       gam[1, 1] = 0;
       gam[1, 2] = negINF; // not sure if this is a good idea but effectively -inf, exp(-inf) can cause problem in Stan due to autograd
       gam[1, 3] = negINF;
+      back_ptr[1,] = negINF;
 
       // we iterate to T + 1, because we inserted a dummy period where 
       // every individual is in the "not recruited" state
+      // forward algorithm, similar to calculating the likelihood
       for (t in 2:(Tp1)) {
         // likelihood of seeing/not seeing the individual when it is alive
         log_obs = 0;
@@ -253,28 +260,54 @@ generated quantities {
         acc1 = gam[t - 1, 1] + log1m_exp(log_recruit[t - 1]);
         acc1 += log_obs_nothere;
         gam[t, 1] = acc1;
+
+        back_ptr[t, 1] = 1;// state decoding
+
         // change to alive
           // come from un-entered
         acc2[1] = gam[t - 1, 1] + log_recruit[t - 1];// recruited into
+          // come from alive
         acc2[2] = gam[t - 1, 2] + log_survival[t - 1];// survived
         acc2 += log_obs;
-        gam[t, 2] = log_sum_exp_vec(acc2);
+
+        if(acc2[2]>acc2[1]){
+          back_ptr[t, 2] = 2;
+          gam[t, 2] = acc2[2];
+
+        } else {
+          back_ptr[t, 2] = 1;
+          gam[t, 2] = acc2[1];
+        }
+
         // change to dead
           // come from alive
         acc3[1] = gam[t - 1, 2] + log1m_exp( log_survival[t - 1] );// dead last year
+          // come from dead
         acc3[2] = gam[t - 1, 3]; // dead can only be dead
         acc3 += log_obs_nothere; // should not see if dead
-        gam[t, 3] = log_sum_exp_vec(acc3);
+        if(acc3[2]>acc3[1]){
+          back_ptr[t, 3] = 3;
+          gam[t, 3] = acc3[2];
+        } else {
+          back_ptr[t, 3] = 2;
+          gam[t, 3] = acc3[1];
+        }
 
-        z[i, t - 1] = sample_multinomial_from_log_prob(gam[t,]); // sample latent state for each individual at each primary occasion
+      }// end forward algorithm
+
+      // backward pass
+      // we start at the last period, and work our way back
+      logp_state = max(gamma[Tp1,]);
+      for(ss in 1:3){
+        if(gam[Tp1,ss] == logp_state){
+          state[i,T] = ss;
+        }
       }
-    } // end FFBS
 
 
-
-
+      for (tt in (T - 1):1) {
+        state[i, tt] = back_ptr[tt, state[i, tt+ 1]]; // back_ptr is already indexed +1
+      }
+    } // end Viterbi
   }// end local stuff
-
-
-
 }
