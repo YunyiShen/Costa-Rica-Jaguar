@@ -22,7 +22,7 @@
 	Rscript ./R/prepare_scr.R
 
 ./clean_data/grid_objs_data.rda: ./clean_data/jaguar_trap_mats_scr.rda ./clean_data/lulc_2017.tif
-	Rscript ./R/form_grid.R
+	Rscript ./R/form_grids.R
 
 ./clean_data/jaguar_trap_mats_scr.rda: ./clean_data/CT_loc.rda	./clean_data/jaguar.rda
 	Rscript ./R/get_detection_hist.R
