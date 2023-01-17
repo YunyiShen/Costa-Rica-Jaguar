@@ -29,9 +29,10 @@ functions {
 
 data {
   int<lower = 1> M;
-  int<lower = 1> T;
-  int<lower = 1> Kmax;
   int<lower = 1> n_trap;
+  int<lower = 1> Kmax;
+  int<lower = 1> T;
+  
   //int<lower = 0> K[n_trap,T];
   array int<lower = 0, upper = 1>[M, n_trap,Kmax, T] y; // detection history, it is ok to ignore time order etc. as we assume secondary occasions are exchangable
   array int<lower = 0, upper = 1>[n_trap,Kmax, T] deploy; //deployment history of all camera traps at all occasions )(primary and secondary)

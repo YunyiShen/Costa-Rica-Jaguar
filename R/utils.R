@@ -36,8 +36,14 @@ SCR23darray <-
 
 
 
+rowallgood <- function(x){
+  apply(x,1,function(x) all(!is.na(x)))
+}
 
-
+normalizing <- function(x, mean_,sd_){
+  x <- apply(x,1,function(x) (x-mean_)/sd_)
+  return(t(x))
+}
 
 
 

@@ -43,5 +43,5 @@ grid_sf <- grid_sf[unlist(lapply(st_intersects(grid_sf, trap_buffer), length)) >
 #plot(grid_sf, pch = 4, col = "red", cex = .3)
 #plot(trap_sf, add = TRUE)
 
-grid_objs <- list(grid_sf = grid_sf, trap_sf = trap_sf, trap_buffer = trap_buffer, traplocs = traplocs)
+grid_objs <- list(grid_sf = grid_sf, trap_sf = trap_sf, trap_buffer = trap_buffer, traplocs = traplocs, scaling = scaling)
 save(grid_objs, file = "./clean_data/grid_objs_data.rda")
