@@ -1,3 +1,6 @@
+./res/js_stan_fit.rda: ./clean_data/js_stan_data.rda
+	Rscript ./R/run_JS.R
+
 ./clean_data/js_stan_data.rda: ./clean_data/jaguar_trap_mats_js.rda \
 								./clean_data/grid_objs_data.rda \
 								./clean_data/rasters/2018_wlprai.tif \

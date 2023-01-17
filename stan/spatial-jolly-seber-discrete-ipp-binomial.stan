@@ -115,30 +115,24 @@ transformed parameters {
       log_probs = log_mu - log_sum_exp_vec(log_mu);// a discrete distribution over pixels, probability s at each pixel
     
 
-      // below calculates probability of seeing an individual at given trap, in a given primary occasion, condition on state of that individual being alive, otherwise on just cannot see it. We will assume secondary occasions and individuals are exchangable, thus we will not index by individuals and secondary occasions
+      // below calculates probability of seeing the detection history at a given trap, in a given primary occasion, condition on state of that individual being alive, otherwise on just cannot see it. We will assume secondary occasions and individuals are exchangable, thus we will not index by individuals and secondary occasions
+      
       for (i in 1:M) {
           for (j in 1:n_trap) {
-            log_seen_center_grid = log_p0 - alpha1 * col(sq_dist,j) + log_probs;
-            if(is_nan(sum(log_seen_center_grid)) && flag == 0){
+            log_seen_center_grid = log_p0 - alpha1 * col(sq_dist,j);
+            log_seen_center_grid = sum(y[i, j, :, t]) * log_seen_center_grid + 
+                  (sum(deploy[j, :, t ])-sum(y[i, j, :, t])) * 
+                    log1m_exp(log_seen_center_grid); // prob seeing the detection history at a given activaty center
+            log_seen_center_grid += log_probs;// "prior" over activity centers
+            
+            if(is_nan(sum(log_seen_center_grid)) && (flag == 0 && (alpha1 <= -negINF))){
                   flag = 1;
                   print("log_seen_center_grid being NaN! This is a bug!");
                   print("log_probs[l]:",log_probs);
                   print("log_p0:",log_p0);
-                  print("dist term:",alpha1 * sq_dist[1,j]);
+                  print("alpha1:",alpha1);
+                  print("dist term:",alpha1 * sq_dist[:,j]);
             }
-            //for (l in 1:n_grid) { // marginalize over activity centers
-            //    log_seen_center_grid[l] = log_p0 - alpha1 * sq_dist[l,j];// distance sampling 
-            //    log_seen_center_grid[l] += log_probs[l];// add Poisson intensity, essentially weighted sum so that we marginalize over activity centers
-                //print("log_seen_center_grid[l]",log_seen_center_grid[l]);
-                //print("log_probs[l]",log_probs[l]);
-            //    if(is_nan(log_seen_center_grid[l]) && flag == 0){
-            //      flag = 1;
-            //      print("log_seen_center_grid[l] being NaN! This is a bug!");
-            //      print("log_probs[l]:",log_probs[l]);
-            //      print("log_p0:",log_p0);
-            //      print("dist term:",alpha1 * sq_dist[l,j]);
-            //    }
-            //}
             log_po[j,t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
             
           }
@@ -159,16 +153,9 @@ transformed parameters {
         // likelihood of seeing/not seeing the individual when it is alive
         log_obs = 0;
         log_obs_nothere = 0;
-        // loop over secondary occasions and traps
-        //  TODO: change this to Binomial distribution, not loop over Kmax
-        for (occasion in 1:Kmax) {
-          for(j in 1:n_trap){
-            log_obs += deploy[j, occasion, t - 1] * (y[i, j, occasion, t - 1] * log_po[j, t-1] + 
-            (1-y[i, j, occasion, t - 1]) * log1m_exp(log_po[j, t-1]));
-            log_obs_nothere += y[i, j, occasion, t - 1] * negINF;// should not show up when it is not there
-          }
-        }
-        
+        //for (occasion in 1:Kmax) {
+        log_obs = sum(log_po[:, t-1]);
+        log_obs_nothere = sum( to_matrix(y[i, :, :, t - 1])) * negINF;
         // change to un-entered
           // get from un-entered
         acc1 = gam[t - 1, 1] + log1m_exp(log_recruit[t - 1]);
@@ -244,16 +231,24 @@ generated quantities {
 
       // below calculates probability of seeing an individual at given trap, in a given primary occasion, condition on state of that individual being alive, otherwise one just cannot see the individual. We will assume secondary occasions and individuals are exchangable, thus we will not index by individuals and secondary occasions
         for (j in 1:n_trap) {
-          for (l in 1:n_grid) { // marginalize over activity centers
+          log_seen_center_grid = log_p0 - alpha1 * col(sq_dist,j);
+          log_seen_center_grid = sum(y[i, j, :, t]) * log_seen_center_grid + 
+                  (sum(deploy[j, :, t ])-sum(y[i, j, :, t])) * 
+                    log1m_exp(log_seen_center_grid); // prob seeing the detection history at a given activaty center
+          log_seen_center_grid += log_probs;// "prior" over activity centers
+          log_lik_center_grid[:,j] = log_seen_center_grid;
+          /* for (l in 1:n_grid) { // marginalize over activity centers
               log_seen_center_grid[l] = log_p0 - alpha1 * sq_dist[l,j];// distance sampling 
-              log_obs = 0;// reuse this, probability of seening the detection history at that trap given the individual is alive in that primary occasion 
-              // TODO: change this to Binomial distribution, not loop over Kmax
-              for (occasion in 1:Kmax) { // product over all secondary occasions
-                log_obs += deploy[j, occasion, t] * (y[i, j, occasion, t ] * log_seen_center_grid[l] + (1-y[i, j, occasion, t]) * log1m_exp(log_seen_center_grid[l]));
-              } // likelihood of the detection history if the individual is alive in that primary occasion, and the activity center is at that pixel
-              log_seen_center_grid[l] += log_probs[l];// add Poisson intensity, essentially weighted sum so that we marginalize over activity centers
-              log_lik_center_grid[l,j] = log_seen_center_grid[l] + log_obs;// save for later use   
-          }
+              //log_obs = 0;// reuse this, probability of seening the detection history at that trap given the individual is alive in that primary occasion 
+              log_obs = binomial_lpmf(sum(y[i, j, :, t])| sum(deploy[j, :, t]), exp(log_seen_center_grid[l]));
+            
+          
+              //for (occasion in 1:Kmax) { // product over all secondary occasions
+              //  log_obs += deploy[j, occasion, t] * (y[i, j, occasion, t ] * log_seen_center_grid[l] + (1-y[i, j, occasion, t]) * log1m_exp(log_seen_center_grid[l]));
+              //} // likelihood of the detection history if the individual is alive in that primary occasion, and the activity center is at that pixel
+              log_seen_center_grid[l] = log_obs + log_probs[l];// add Poisson intensity, essentially weighted sum so that we marginalize over activity centers
+              log_lik_center_grid[l,j] = log_obs + log_probs[l];// save for later use   
+          } */
           log_po[j,t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
         }
 
@@ -278,17 +273,10 @@ generated quantities {
       // forward algorithm, similar to calculating the likelihood
       for (t in 2:(Tp1)) {
         // likelihood of seeing/not seeing the individual when it is alive
-        log_obs = 0;
-        log_obs_nothere = 0;
-        // loop over secondary occasions and traps
-        //  TODO: change this to Binomial distribution, not loop over Kmax
-        for (occasion in 1:Kmax) {
-          for(j in 1:n_trap){
-            log_obs += deploy[j, occasion, t - 1] * (y[i, j, occasion, t - 1] * log_po[j, t-1] + 
-            (1-y[i, j, occasion, t - 1]) * log1m_exp(log_po[j, t-1]));
-            log_obs_nothere += y[i, j, occasion, t - 1] * negINF;// should not show up when it is not there
-          }
-        }
+        
+        log_obs = sum(log_po[:, t-1]);
+        log_obs_nothere = sum( to_matrix(y[i, :, :, t - 1])) * negINF;
+        
         // change to un-entered
           // get from un-entered
         acc1 = gam[t - 1, 1] + log1m_exp(log_recruit[t - 1]);
