@@ -95,7 +95,7 @@ transformed parameters {
 
   { // begin local scope
     real negINF = -1e20; // local negative inf, to work in log scale avoiding underflow, such a effective negInf is needed to avoid autograd error caused by exp(-Inf) 
-    real log_po[n_trap, T]; // detection probability, given the state is alive, otherwise is -inf (emission in HMM sense), details later
+    real log_po[M, n_trap, T]; // detection probability, given the state is alive, otherwise is -inf (emission in HMM sense), details later
     vector[n_grid] log_seen_center_grid;// detection probability of a given trap, given an individual is at a given activity center
     real acc1;
     vector[2] acc2;
@@ -133,7 +133,7 @@ transformed parameters {
                   print("alpha1:",alpha1);
                   print("dist term:",alpha1 * sq_dist[:,j]);
             }
-            log_po[j,t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
+            log_po[i,j,t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
             
           }
       }
@@ -154,7 +154,7 @@ transformed parameters {
         log_obs = 0;
         log_obs_nothere = 0;
         //for (occasion in 1:Kmax) {
-        log_obs = sum(log_po[:, t-1]);
+        log_obs = sum(log_po[i, :, t-1]);
         log_obs_nothere = sum( to_matrix(y[i, :, :, t - 1])) * negINF;
         // change to un-entered
           // get from un-entered
@@ -204,7 +204,7 @@ generated quantities {
     matrix[n_grid,n_trap] log_lik_center_grid; // we need to save all traps, given we are not marginalize over grids any more 
     vector[n_grid] log_mu; // log Poisson intensity, at pixels, up to a constant (we do not need it since we condition on numer of total points)
     vector[n_grid] log_probs;
-    real log_po[n_trap, T];// detection probability, 
+    real log_po[M, n_trap, T];// detection probability, 
 
 
     // local stuff for FFBS/Viterbi
@@ -249,7 +249,7 @@ generated quantities {
               log_seen_center_grid[l] = log_obs + log_probs[l];// add Poisson intensity, essentially weighted sum so that we marginalize over activity centers
               log_lik_center_grid[l,j] = log_obs + log_probs[l];// save for later use   
           } */
-          log_po[j,t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
+          log_po[i, j, t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
         }
 
         // now sum over traps using log_lik_center_grid, we have the probability of seeing the detection history at that primary occasion, given the individual is alive in that primary occasion locating at the certain pixel
@@ -274,7 +274,7 @@ generated quantities {
       for (t in 2:(Tp1)) {
         // likelihood of seeing/not seeing the individual when it is alive
         
-        log_obs = sum(log_po[:, t-1]);
+        log_obs = sum(log_po[i, :, t-1]);
         log_obs_nothere = sum( to_matrix(y[i, :, :, t - 1])) * negINF;
         
         // change to un-entered
