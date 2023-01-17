@@ -95,8 +95,7 @@ transformed parameters {
 
   { // begin local scope
     real negINF = -1e20; // local negative inf, to work in log scale avoiding underflow, such a effective negInf is needed to avoid autograd error caused by exp(-Inf) 
-    real log_po[M, n_trap, T]; // detection probability, given the state is alive, otherwise is -inf (emission in HMM sense), details later
-    vector[n_grid] log_seen_center_grid;// detection probability of a given trap, given an individual is at a given activity center
+    real log_po[M, T]; // detection probability, given the state is alive, otherwise is -inf (emission in HMM sense), details later
     real acc1;
     vector[2] acc2;
     vector[2] acc3;
@@ -108,6 +107,9 @@ transformed parameters {
     
     vector[n_grid] log_mu; // log Poisson intensity, at pixels, up to a constant (we do not need it since we condition on numer of total points)
     vector[n_grid] log_probs;
+    vector[n_grid] log_seen_center_grid;// detection probability of a given trap, given an individual is at a given activity center
+    vector[n_grid] dist_tmp;
+    
 
     // assume individuals do not move in primary occasions, calculate the probability each individual show up in a certain pixel
     for (t in 1:T) {// loop over primary occasions first
@@ -118,12 +120,13 @@ transformed parameters {
       // below calculates probability of seeing the detection history at a given trap, in a given primary occasion, condition on state of that individual being alive, otherwise on just cannot see it. We will assume secondary occasions and individuals are exchangable, thus we will not index by individuals and secondary occasions
       
       for (i in 1:M) {
+          log_seen_center_grid = rep_vector(0, n_grid);
           for (j in 1:n_trap) {
-            log_seen_center_grid = log_p0 - alpha1 * col(sq_dist,j);
-            log_seen_center_grid = sum(y[i, j, :, t]) * log_seen_center_grid + 
+            dist_tmp = log_p0 - alpha1 * col(sq_dist,j);
+            log_seen_center_grid += sum(y[i, j, :, t]) * dist_tmp + 
                   (sum(deploy[j, :, t ])-sum(y[i, j, :, t])) * 
-                    log1m_exp(log_seen_center_grid); // prob seeing the detection history at a given activaty center
-            log_seen_center_grid += log_probs;// "prior" over activity centers
+                    log1m_exp(dist_tmp); // prob seeing the detection history at a given activaty center
+            //log_seen_center_grid += log_probs;// "prior" over activity centers
             
             if(is_nan(sum(log_seen_center_grid)) && (flag == 0 && (alpha1 <= -negINF))){
                   flag = 1;
@@ -133,9 +136,9 @@ transformed parameters {
                   print("alpha1:",alpha1);
                   print("dist term:",alpha1 * sq_dist[:,j]);
             }
-            log_po[i,j,t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
             
           }
+          log_po[i,t] = log_sum_exp_vec(log_seen_center_grid + log_probs);// margianlize over activity centers by logsumexp
       }
     }
     
@@ -154,7 +157,7 @@ transformed parameters {
         log_obs = 0;
         log_obs_nothere = 0;
         //for (occasion in 1:Kmax) {
-        log_obs = sum(log_po[i, :, t-1]);
+        log_obs = log_po[i, t-1];
         log_obs_nothere = sum( to_matrix(y[i, :, :, t - 1])) * negINF;
         // change to un-entered
           // get from un-entered
@@ -204,12 +207,13 @@ generated quantities {
     matrix[n_grid,n_trap] log_lik_center_grid; // we need to save all traps, given we are not marginalize over grids any more 
     vector[n_grid] log_mu; // log Poisson intensity, at pixels, up to a constant (we do not need it since we condition on numer of total points)
     vector[n_grid] log_probs;
-    real log_po[M, n_trap, T];// detection probability, 
+    real log_po[M, T];// detection probability, 
 
 
     // local stuff for FFBS/Viterbi
     real negINF = -1e20; // local negative inf, to work in log scale avoiding underflow, such a effective negInf is needed to avoid autograd error caused by exp(-Inf) 
     vector[n_grid] log_seen_center_grid;
+    vector[n_grid] dist_tmp;
     real acc1;
     vector[2] acc2;
     vector[2] acc3;
@@ -228,33 +232,18 @@ generated quantities {
         log_mu = envX[t] * beta_env;// intensity at that year
         log_probs = log_mu - log_sum_exp_vec(log_mu);// a discrete distribution over pixels, probability s at each pixel
     
-
+        log_seen_center_grid = rep_vector(0, n_grid);; // reset
       // below calculates probability of seeing an individual at given trap, in a given primary occasion, condition on state of that individual being alive, otherwise one just cannot see the individual. We will assume secondary occasions and individuals are exchangable, thus we will not index by individuals and secondary occasions
         for (j in 1:n_trap) {
-          log_seen_center_grid = log_p0 - alpha1 * col(sq_dist,j);
-          log_seen_center_grid = sum(y[i, j, :, t]) * log_seen_center_grid + 
+          dist_tmp = log_p0 - alpha1 * col(sq_dist,j);
+          log_seen_center_grid += sum(y[i, j, :, t]) * dist_tmp + 
                   (sum(deploy[j, :, t ])-sum(y[i, j, :, t])) * 
-                    log1m_exp(log_seen_center_grid); // prob seeing the detection history at a given activaty center
-          log_seen_center_grid += log_probs;// "prior" over activity centers
-          log_lik_center_grid[:,j] = log_seen_center_grid;
-          /* for (l in 1:n_grid) { // marginalize over activity centers
-              log_seen_center_grid[l] = log_p0 - alpha1 * sq_dist[l,j];// distance sampling 
-              //log_obs = 0;// reuse this, probability of seening the detection history at that trap given the individual is alive in that primary occasion 
-              log_obs = binomial_lpmf(sum(y[i, j, :, t])| sum(deploy[j, :, t]), exp(log_seen_center_grid[l]));
-            
-          
-              //for (occasion in 1:Kmax) { // product over all secondary occasions
-              //  log_obs += deploy[j, occasion, t] * (y[i, j, occasion, t ] * log_seen_center_grid[l] + (1-y[i, j, occasion, t]) * log1m_exp(log_seen_center_grid[l]));
-              //} // likelihood of the detection history if the individual is alive in that primary occasion, and the activity center is at that pixel
-              log_seen_center_grid[l] = log_obs + log_probs[l];// add Poisson intensity, essentially weighted sum so that we marginalize over activity centers
-              log_lik_center_grid[l,j] = log_obs + log_probs[l];// save for later use   
-          } */
-          log_po[i, j, t] = log_sum_exp_vec(log_seen_center_grid);// margianlize over activity centers by logsumexp
+                    log1m_exp(dist_tmp); // prob seeing the detection history at a given activaty center        
         }
-
+        log_po[i, t] = log_sum_exp_vec(log_seen_center_grid + log_probs);// margianlize over activity centers by logsumexp
         // now sum over traps using log_lik_center_grid, we have the probability of seeing the detection history at that primary occasion, given the individual is alive in that primary occasion locating at the certain pixel
 
-        s[i,t] = sample_multinomial_from_log_prob_rng(rowSum(log_lik_center_grid)); // sample activity center for each individual at each primary occasion
+        s[i,t] = sample_multinomial_from_log_prob_rng(log_seen_center_grid + log_probs); // sample activity center for each individual at each primary occasion
       }
     } // end dealing with observation and activaty center
 
@@ -274,7 +263,7 @@ generated quantities {
       for (t in 2:(Tp1)) {
         // likelihood of seeing/not seeing the individual when it is alive
         
-        log_obs = sum(log_po[i, :, t-1]);
+        log_obs = log_po[i, t-1];
         log_obs_nothere = sum( to_matrix(y[i, :, :, t - 1])) * negINF;
         
         // change to un-entered
