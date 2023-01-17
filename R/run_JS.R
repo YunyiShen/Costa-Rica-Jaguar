@@ -6,7 +6,7 @@ load("./clean_data/js_stan_data.rda")
 m_init <- stan_model("./stan/spatial-jolly-seber-discrete-ipp-binomial.stan")
 set.seed(42)
 m_fit <- sampling(m_init,  data = JS_stan_data,chains = 2, iter = 1000, 
-        init = function() list(gamma = 0.05, psi = 0.15, 
+        init = function() list(gamma = 0.2, psi = 0.15, 
                                 phi = 0.85, alpha1 = .7, 
                                 p0 = .03, beta = rep(0,JS_stan_data$n_env)), 
         verbose = TRUE)

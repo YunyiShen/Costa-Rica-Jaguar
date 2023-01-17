@@ -95,7 +95,7 @@ transformed parameters {
 
   { // begin local scope
     real negINF = -1e20; // local negative inf, to work in log scale avoiding underflow, such a effective negInf is needed to avoid autograd error caused by exp(-Inf) 
-    real log_po[M, T]; // detection probability, given the state is alive, otherwise is -inf (emission in HMM sense), details later
+    //real log_po[M, T]; // detection probability, given the state is alive, otherwise is -inf (emission in HMM sense), details later
     real acc1;
     vector[2] acc2;
     vector[2] acc3;
@@ -110,38 +110,6 @@ transformed parameters {
     vector[n_grid] log_seen_center_grid;// detection probability of a given trap, given an individual is at a given activity center
     vector[n_grid] dist_tmp;
     
-
-    // assume individuals do not move in primary occasions, calculate the probability each individual show up in a certain pixel
-    for (t in 1:T) {// loop over primary occasions first
-      log_mu = envX[t] * beta_env;// intensity at that year
-      log_probs = log_mu - log_sum_exp_vec(log_mu);// a discrete distribution over pixels, probability s at each pixel
-    
-
-      // below calculates probability of seeing the detection history at a given trap, in a given primary occasion, condition on state of that individual being alive, otherwise on just cannot see it. We will assume secondary occasions and individuals are exchangable, thus we will not index by individuals and secondary occasions
-      
-      for (i in 1:M) {
-          log_seen_center_grid = rep_vector(0, n_grid);
-          for (j in 1:n_trap) {
-            dist_tmp = log_p0 - alpha1 * col(sq_dist,j);
-            log_seen_center_grid += sum(y[i, j, :, t]) * dist_tmp + 
-                  (sum(deploy[j, :, t ])-sum(y[i, j, :, t])) * 
-                    log1m_exp(dist_tmp); // prob seeing the detection history at a given activaty center
-            //log_seen_center_grid += log_probs;// "prior" over activity centers
-            
-            if(is_nan(sum(log_seen_center_grid)) && (flag == 0 && (alpha1 <= -negINF))){
-                  flag = 1;
-                  print("log_seen_center_grid being NaN! This is a bug!");
-                  print("log_probs[l]:",log_probs);
-                  print("log_p0:",log_p0);
-                  print("alpha1:",alpha1);
-                  print("dist term:",alpha1 * sq_dist[:,j]);
-            }
-            
-          }
-          log_po[i,t] = log_sum_exp_vec(log_seen_center_grid + log_probs);// margianlize over activity centers by logsumexp
-      }
-    }
-    
     // Forward algorithm
     for (i in 1:M) {
       // All individuals are in state 1 (not recruited) at t=0, we work in log scale
@@ -153,11 +121,18 @@ transformed parameters {
       // we iterate to T + 1, because we inserted a dummy period where 
       // every individual is in the "not recruited" state
       for (t in 2:(Tp1)) {
-        // likelihood of seeing/not seeing the individual when it is alive
-        log_obs = 0;
-        log_obs_nothere = 0;
-        //for (occasion in 1:Kmax) {
-        log_obs = log_po[i, t-1];
+        log_mu = envX[t-1] * beta_env;// intensity at that year
+        log_probs = log_mu - log_sum_exp_vec(log_mu);// a discrete distribution over pixels, probability s at each pixel
+
+        log_seen_center_grid = rep_vector(0, n_grid);
+        for (j in 1:n_trap) {
+          dist_tmp = log_p0 - alpha1 * col(sq_dist,j);
+          log_seen_center_grid += sum(y[i, j, :, t - 1]) * dist_tmp + 
+                (sum(deploy[j, :, t - 1 ])-sum(y[i, j, :, t - 1])) * 
+                log1m_exp(dist_tmp); // prob seeing the detection history at a given activaty center
+            
+        }
+        log_obs = log_sum_exp_vec(log_seen_center_grid + log_probs);// margianlize over activity centers by logsumexp
         log_obs_nothere = sum( to_matrix(y[i, :, :, t - 1])) * negINF;
         // change to un-entered
           // get from un-entered
