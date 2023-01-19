@@ -22,10 +22,6 @@ functions {
     return res;
   }
 
-  int sample_multinomial_from_log_prob_rng(vector x){
-    vector[rows(x)] tmp = x - log_sum_exp_vec(x);
-    return categorical_rng(exp(tmp));
-  }
 }
 
 data {
@@ -230,7 +226,7 @@ generated quantities {
     real log_obs;
     real log_obs_nothere; // more a place holder to check if we have seen an individual at a trap when it should NOT be seen
     vector[3] gam[Tp1];
-    int back_ptr[Tp1,3];
+    vector[3] bkw; // backward (unnormalized) probability at a state
 
     real logp_state; 
 
@@ -239,7 +235,6 @@ generated quantities {
     dist_tmp = log_p0 - alpha1 * sq_dist;
     for(t in 1:T){
       log_probs[:, t] = log_softmax( envX[t] * beta_env);// intensity at that year
-      //log_probs[:, t] = log_probs[:, t] - log_sum_exp_vec(log_probs[:, t]);// a discrete distribution over pixels, probability s at each pixel
     }
 
     dist_tmp = log_p0 - alpha1 * sq_dist;
@@ -259,19 +254,18 @@ generated quantities {
         log_po[i, t] = log_sum_exp_vec(log_seen_center_grid + log_probs[:, t]);// margianlize over activity centers by logsumexp
         // now sum over traps using log_lik_center_grid, we have the probability of seeing the detection history at that primary occasion, given the individual is alive in that primary occasion locating at the certain pixel
 
-        s[i,t] = sample_multinomial_from_log_prob_rng(log_seen_center_grid + log_probs[:, t]); // sample activity center for each individual at each primary occasion
+        s[i,t] = categorical_rng( softmax( log_seen_center_grid + log_probs[:, t])); // sample activity center for each individual at each primary occasion
       }
     } // end dealing with observation and activaty center
 
-    // Viterbi for latent state
+    // FFBS for latent state, see https://github.com/probcomp/metaprob/issues/17
     for (i in 1:M) {
       // All individuals are in state 1 (not recruited) at t=0, we work in log scale
+      
+      // forward pass
       gam[1, 1] = 0;
       gam[1, 2] = negINF; // not sure if this is a good idea but effectively -inf, exp(-inf) can cause problem in Stan due to autograd
       gam[1, 3] = negINF;
-      back_ptr[1,1] = 1;
-      back_ptr[1,2] = 1;
-      back_ptr[1,3] = 1;
 
 
       log_obs = log_po[i, 1];
@@ -283,7 +277,6 @@ generated quantities {
       acc1 += log_obs_nothere;
       gam[2, 1] = acc1;
 
-      back_ptr[2, 1] = 1;// state decoding
 
       // change to alive
         // come from un-entered
@@ -291,15 +284,7 @@ generated quantities {
           // come from alive
       acc2[2] = gam[1, 2] + log_survival;// survived
       acc2 += log_obs;
-
-      if(acc2[2]>acc2[1]){
-        back_ptr[2, 2] = 2;
-        gam[2, 2] = acc2[2];
-
-      } else {
-        back_ptr[2, 2] = 1;
-        gam[2, 2] = acc2[1];
-      }
+      gam[2,2] = log_sum_exp_vec(acc2);
 
         // change to dead
           // come from alive
@@ -307,16 +292,11 @@ generated quantities {
         // come from dead
       acc3[2] = gam[1, 3]; // dead can only be dead
       acc3 += log_obs_nothere; // should not see if dead
-      if(acc3[2]>acc3[1]){
-        back_ptr[2, 3] = 3;
-        gam[2, 3] = acc3[2];
-      } else {
-        back_ptr[2, 3] = 2;
-        gam[2, 3] = acc3[1];
-      }
+      gam[2,3] = log_sum_exp_vec(acc3);
+
       // we iterate to T + 1, because we inserted a dummy period where 
       // every individual is in the "not recruited" state
-      // forward algorithm, similar to calculating the likelihood
+      // forward algorithm, calculate P(z_T, o_1,...,o_T)
       for (t in 3:(Tp1)) {
         // likelihood of seeing/not seeing the individual when it is alive
         
@@ -329,7 +309,6 @@ generated quantities {
         acc1 += log_obs_nothere;
         gam[t, 1] = acc1;
 
-        back_ptr[t, 1] = 1;// state decoding
 
         // change to alive
           // come from un-entered
@@ -338,14 +317,7 @@ generated quantities {
         acc2[2] = gam[t - 1, 2] + log_survival;// survived
         acc2 += log_obs;
 
-        if(acc2[2]>acc2[1]){
-          back_ptr[t, 2] = 2;
-          gam[t, 2] = acc2[2];
-
-        } else {
-          back_ptr[t, 2] = 1;
-          gam[t, 2] = acc2[1];
-        }
+        gam[t,2] = log_sum_exp_vec(acc2);
 
         // change to dead
           // come from alive
@@ -353,30 +325,35 @@ generated quantities {
           // come from dead
         acc3[2] = gam[t - 1, 3]; // dead can only be dead
         acc3 += log_obs_nothere; // should not see if dead
-        if(acc3[2]>acc3[1]){
-          back_ptr[t, 3] = 3;
-          gam[t, 3] = acc3[2];
-        } else {
-          back_ptr[t, 3] = 2;
-          gam[t, 3] = acc3[1];
-        }
+        gam[t, 3] = log_sum_exp_vec(acc3);
 
       }// end forward algorithm
 
       // backward pass
       // we start at the last period, and work our way back
-      logp_state = max(gam[Tp1]);
-      for(ss in 1:3){
-        if(gam[Tp1,ss] == logp_state){
-          z[i,T] = ss;
-        }
-      }
-
-
+      
+      z[i,T] = categorical_rng(softmax(gam[Tp1,]));
+      
       for (tt in 1:(T - 1)) {
-        z[i, T-tt] = back_ptr[T-tt+2, z[i, T-tt+ 1]]; // back_ptr is indexed +1, when tt = T-1, we want index back_ptr Tp1 since we added one period at the beginning
+        if(z[i,T-tt+1]==1){
+          bkw[1] = log1m_exp(log_recruit);
+          bkw[2] = negINF;
+          bkw[3] = negINF;
+        }
+        if(z[i,T-tt+1]==2){
+          bkw[1] = log_recruit;
+          bkw[2] = log_survival;
+          bkw[3] = negINF;
+        }
+        if(z[i,T-tt+1]==3){
+          bkw[1] = negINF;
+          bkw[2] = log1m_exp(log_survival);
+          bkw[3] = 0;
+        }
+        bkw += gam[Tp1-tt,];
+        z[i,T-tt] = categorical_rng(softmax(bkw));
       }
-    } // end Viterbi
+    } // end FFBS
   }// end local stuff
 }
 
