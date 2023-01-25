@@ -1,5 +1,6 @@
 library(rstan)
 library(sf)
+library(sp)
 library(ggplot2)
 library(reshape)
 source("./R/utils.R")
@@ -48,4 +49,5 @@ for(i in 1:4){
 }
 dev.off()
 
+plot(m_fit, pars = c("beta_env"),plotfun = "trace")
 plot(m_fit, pars = c("psi","gamma","phi","p0","alpha1"),plotfun = "trace")
