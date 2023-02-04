@@ -42,7 +42,10 @@ for(i in 1:4){
                     Yl = 0.999*min(JS_stan_data$grid_pts[,2]), 
                     Yu = 1.001*max(JS_stan_data$grid_pts[,2]),
                     )
-  points(grid_objs$traplocs, pch = 2)
+  points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)
+  for(j in 1:13){ # 13 seen individuals
+    points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")
+  }
   points(JS_stan_data$grid_pts, pch = 20, 
          col = adjustcolor("red", alpha.f = 0.2), cex = 0.3)
   plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
@@ -51,3 +54,4 @@ dev.off()
 
 plot(m_fit, pars = c("beta_env"),plotfun = "trace")
 plot(m_fit, pars = c("psi","gamma","phi","p0","alpha1"),plotfun = "trace")
+pairs(m_fit, pars = c("beta_env"))

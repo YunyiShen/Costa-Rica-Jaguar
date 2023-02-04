@@ -20,7 +20,7 @@ y2d <- apply(y3d, c(1, 2), sum)
 # setup a grid to approximate the marginalization over space
 # smaller delta values --> better approximation
 delta <- .1
-buffer <- 1.5
+buffer <- 1.
 x1_grid <- seq(min(traplocs$x) - buffer, 
                max(traplocs$x) + buffer, 
                by = delta)

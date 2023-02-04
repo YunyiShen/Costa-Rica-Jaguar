@@ -96,7 +96,7 @@ transformed parameters {
 
     
     matrix[n_grid, n_trap] dist_tmp;
-    matrix[n_grid] log_probs; // log Poisson intensity, at pixels, up to a constant (we do not need it since we condition on numer of total points)
+    vector[n_grid] log_probs; // log Poisson intensity, at pixels, up to a constant (we do not need it since we condition on numer of total points)
     
     dist_tmp = log_p0 - alpha1 * sq_dist;
     log_probs = log_softmax( envX * beta_env);// intensity at that year
@@ -114,9 +114,9 @@ transformed parameters {
             // manually set the first period's recruitment
             log_obs = 0;
             for (j in 1:n_trap) {
-                log_obs += sum(y[i, j, :, 1]) * dist_temp[k,j]+ 
+                log_obs += sum(y[i, j, :, 1]) * dist_tmp[k,j]+ 
                   (sum(deploy[j, :, 1 ])-sum(y[i, j, :, 1])) * 
-                  log1m_exp(dist_temp[k,j]); // prob seeing the detection history at a given activaty center
+                  log1m_exp(dist_tmp[k,j]); // prob seeing the detection history at a given activaty center
             }
         
             log_obs_nothere = sum( to_matrix(y[i, :, :, 1])) * negINF;
@@ -179,7 +179,7 @@ transformed parameters {
               gam[t, 3] = log_sum_exp(acc3);
             } // end time
 	     
-            log_lik[i,k] = log_sum_exp(gam[Tp1]) + log_prob[k]; // prior on center location
+            log_lik[i,k] = log_sum_exp(gam[Tp1]) + log_probs[k]; // prior on center location
         }// end gird
       }// end individual 
   } // end local scope
@@ -190,7 +190,7 @@ model {
   alpha1 ~ lognormal(0, 1);
   beta_env ~ normal(0, 10);
   for(i in 1:M){
-    target += sum(log_sum_exp(log_lik[i,:]));
+    target += log_sum_exp(log_lik[i, :]);
   }
   
 }
@@ -229,7 +229,7 @@ generated quantities {
 
     // FFBS for latent state, see https://github.com/probcomp/metaprob/issues/17
     for (i in 1:M) {
-      s[i] = categorical_rng( softmax(log_lik[i,:])); // sample activity center for each individual 
+      s[i] = categorical_rng( softmax((log_lik[i,:])')); // sample activity center for each individual 
       // All individuals are in state 1 (not recruited) at t=0, we work in log scale
       
       // forward pass
