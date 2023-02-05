@@ -12,8 +12,16 @@ functions {
     int nrow = rows(x);
     int ncol = cols(x);
     vector[nrow] res;
-    for (i in 1:nrow){
-      res[i] = sum(x[i,]);
+    res = rep_vector(0, nrow);
+    if(nrow<ncol){
+      for (i in 1:nrow){
+        res[i] = sum(x[i,]);
+      }
+    }
+    else{
+      for (i in 1:ncol){
+        res += x[,i];
+      }
     }
     return res;
   }
@@ -106,6 +114,16 @@ transformed parameters {
     
     // Forward algorithm
     for (i in 1:M) {
+      /*
+      TODO: vectorize the loop over grids. By
+      1) keep tracking of gamma for each grid, i.e. make gam[T, 3, n_grid]
+      2) keep tracking of log_obs of each grid, get log_obs a vector of n_grid
+      3) make calculation of log_obs vectorized
+      
+      TODO: consider if we can even vectorize the loop over individuals, given they are considered independent
+        
+      */
+        
         for (k in 1:n_grid){ // loop over grids (activity center) to marginalize 
       	    // All individuals are in state 1 (not recruited) at t=0, we work in log scale
             gam[1, 1] = 0;
