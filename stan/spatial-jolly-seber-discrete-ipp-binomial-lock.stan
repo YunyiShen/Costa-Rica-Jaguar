@@ -179,6 +179,7 @@ transformed parameters {
         // come from alive
       acc3[1] = gam[1, 2];// dead last year
       acc3[1] += log1m_exp( log_survival );
+      acc3[1] += log_obs_nothere; // should not see if dead
         
         // come from dead
       acc3[2] = gam[1, 3]; // dead can only be dead
@@ -214,6 +215,7 @@ transformed parameters {
           // come from alive
         acc3[1] = gam[t - 1, 2];// dead last year
         acc3[1]+= log1m_exp( log_survival );
+        acc3[1] += log_obs_nothere; // should not see if dead
           // come from dead
         acc3[2] = gam[t - 1, 3]; // dead can only be dead
         acc3[2] += log_obs_nothere; // should not see if dead
