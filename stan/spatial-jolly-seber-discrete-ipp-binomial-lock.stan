@@ -163,16 +163,19 @@ transformed parameters {
       // change to un-entered
         // get from un-entered
       acc1 = gam[1, 1];
-      acc1 += (log1m_exp(log_init_recruit) + log_obs_nothere);
+      acc1 += log1m_exp(log_init_recruit);
+      acc1 += log_obs_nothere;
       gam[2, 1] = acc1;
         
       // change to alive
         // come from un-entered
       acc2[1] = gam[1, 1];// recruited into
       acc2[1] += log_init_recruit;
+      acc2[1] += log_obs;
         // come from alive
       acc2[2] = gam[1, 2];// survived
-      acc2[2] += (log_obs + log_survival);
+      acc2[2] += log_survival;
+      acc2[2] += log_obs;
           
       gam[2, 2] = log_sum_exp_helper(acc2,M, n_grid);
       // change to dead
@@ -199,16 +202,19 @@ transformed parameters {
         // change to un-entered
           // get from un-entered
         acc1 = gam[t - 1, 1] ;
-        acc1 += (log1m_exp(log_recruit) + log_obs_nothere);
+        acc1 += log1m_exp(log_recruit);
+        acc1 += log_obs_nothere;
         gam[t, 1] = acc1;
           
         // change to alive
           // come from un-entered
         acc2[1] = gam[t - 1, 1];// recruited into
         acc2[1] += log_recruit;
+        acc2[1] += log_obs;
           // come from alive
         acc2[2] = gam[t - 1, 2] ;// survived
-        acc2[2] += (log_obs + log_survival);
+        acc2[2] += log_survival;
+        acc2[2] += log_obs;
           
         gam[t, 2] = log_sum_exp_helper(acc2,M, n_grid);
         // change to dead
