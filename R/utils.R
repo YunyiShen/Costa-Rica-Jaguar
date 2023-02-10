@@ -150,8 +150,10 @@ SCR0density<-function (obj, nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL,
   return(list(grid = cbind(xg, yg), Dn = Dn))
 }
 
-JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, 
-                      Yu = NULL, scalein = 100, scaleout = 100, col="gray",ncolors = 10,whichguy=NULL,...){
+JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,plotit = TRUE,
+                      nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, 
+                      Yu = NULL, scalein = 100, scaleout = 100, 
+                      col="gray",ncolors = 10,whichguy=NULL,...){
 
   if(locked){
     Sxout <- pts[s,1] |> 
@@ -195,16 +197,20 @@ JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,nx = 30, ny = 30, Xl =
   }
   
   cat("mean: ", mean(Dn), fill = TRUE)
-  par(mar = c(3, 3, 3, 6))
-  if (col == "gray") {
-    cc <- seq(3, 17, , 10)/20
-    cc <- rev(gray(cc))
-  }
-  else cc <- terrain.colors(ncolors)
+  if(plotit){
+    par(mar = c(3, 3, 3, 6))
+    if (col == "gray") {
+      cc <- seq(3, 17, , 10)/20
+      cc <- rev(gray(cc))
+    }
+    else cc <- terrain.colors(ncolors)
   
-  image(xg, yg, Dn, col = cc,...)
-  image.scale(Dn, col = cc)
-  box()
+  
+    image(xg, yg, Dn, col = cc,...)
+    image.scale(Dn, col = cc)
+    box()
+  }
+
   return(list(grid = list(xg = xg, yg = yg), Dn = Dn))
 }
 

@@ -3,9 +3,10 @@ library(sf)
 library(sp)
 library(ggplot2)
 library(reshape)
+library(fileds)
 source("./R/utils.R")
 
-load("./res/js_lock_stan_fit.rda")
+load("./res/js_lock_null_stan_fit.rda")
 load("./clean_data/grid_objs_data.rda")
 load("./clean_data/js_stan_data.rda")
 park_boundry <- st_read("./data/mask/Corcovado/Corcovado.shp") |> 
@@ -34,8 +35,8 @@ ggplot2::ggsave("./res/Figs/js_pop_est.png", width = 6, height = 4, unit = "in")
 s <- rstan::extract(m_fit, c("s"))$s
 
 density_est <- list()
-png("./res/Figs/js_den_est.png", width = 6 * 2, height = 4 * 2, units = "in",res = 500)
-par(mfrow = c(2,2))
+png("./res/Figs/js_null_den_est.png", width = 6 * 2, height = 4 * 2, units = "in",res = 500)
+par(mfrow = c(2,2),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 for(i in 1:4){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
                     nx = 46, ny = 37, main = i+2017, 
@@ -43,8 +44,15 @@ for(i in 1:4){
                     Xu = max(JS_stan_data$grid_pts[,1])+.2,
                     Yl = min(JS_stan_data$grid_pts[,2])-.2, 
                     Yu = max(JS_stan_data$grid_pts[,2])+.2,
-                    ncolors = 20
+                    plotit = FALSE
                     )
+  fields::image.plot(density_est[[i]]$grid$xg, 
+            density_est[[i]]$grid$yg, 
+            density_est[[i]]$Dn, 
+            zlim = c(0.1,20), xlab = "", ylab = "", 
+            main = i+2017,
+            col = gray.colors(20, start = 0., 
+                    end = 0.9, gamma = 1.1, rev = TRUE))
   points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)
   for(j in 1:13){ # 13 seen individuals
     points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")
