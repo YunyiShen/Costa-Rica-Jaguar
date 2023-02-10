@@ -150,14 +150,25 @@ SCR0density<-function (obj, nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL,
   return(list(grid = cbind(xg, yg), Dn = Dn))
 }
 
-JSdensity <- function(s, z, pts,yearid = 1,nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, 
+JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, 
                       Yu = NULL, scalein = 100, scaleout = 100, col="gray",ncolors = 10,whichguy=NULL,...){
 
-  Sxout <- pts[s[,,yearid],1] |> 
+  if(locked){
+    Sxout <- pts[s,1] |> 
+      matrix(nrow = nrow(s))
+
+    Syout <- pts[s,2] |> 
+      matrix(nrow = nrow(s))
+  }
+  else{
+    Sxout <- pts[s[,,yearid],1] |> 
       matrix(nrow = nrow(s[,,yearid]))
 
-  Syout <- pts[s[,,yearid],2] |> 
+    Syout <- pts[s[,,yearid],2] |> 
       matrix(nrow = nrow(s[,,yearid]))
+  }
+  
+  
 
   z <- z[,,yearid]
   niter <- nrow(Sxout)
@@ -194,7 +205,7 @@ JSdensity <- function(s, z, pts,yearid = 1,nx = 30, ny = 30, Xl = NULL, Xu = NUL
   image(xg, yg, Dn, col = cc,...)
   image.scale(Dn, col = cc)
   box()
-  return(list(grid = cbind(xg, yg), Dn = Dn))
+  return(list(grid = list(xg = xg, yg = yg), Dn = Dn))
 }
 
 
