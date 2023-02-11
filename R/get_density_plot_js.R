@@ -129,3 +129,8 @@ abline(v=0, lwd = 2)
 dev.off()
 lw_ci <- sapply(params, quantile, .025)
 hi_ci <- sapply(params, quantile, .975)
+mi_ci <- sapply(params, quantile, .5)
+
+write.csv(data.frame(median = mi_ci,
+  ci_low = lw_ci, 
+  ci_high = hi_ci),"./res/js_lock_prey_ci_vital.csv")  
