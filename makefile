@@ -1,3 +1,6 @@
+./res/js_lock_stan_fit.rda: ./clean_data/js_stan_data.rda
+	Rscript ./R/run_JS_lock.R
+
 ./res/js_stan_fit.rda: ./clean_data/js_stan_data.rda
 	Rscript ./R/run_JS.R
 

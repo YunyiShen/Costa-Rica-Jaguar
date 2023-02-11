@@ -5,10 +5,10 @@ library(terra)
 raw_raster_loc <- "./data/SpatialCovariates"
 raster_target <- "./clean_data/rasters"
 raw_raster_files <- c(
-    "dist_prkbndry/hdr.adf",
-    "dist_station/hdr.adf",
-    "dist_trail/hdr.adf",
-    "riverdensity2/hdr.adf",
+    #"dist_prkbndry/hdr.adf",
+    #"dist_station/hdr.adf",
+    #"dist_trail/hdr.adf",
+    #"riverdensity2/hdr.adf",
     "WLP_RAI_Rasters/2018_wlprai/hdr.adf",
     "WLP_RAI_Rasters/2019_wlprai/hdr.adf",
     "WLP_RAI_Rasters/2020_wlprai_3/hdr.adf",
@@ -16,10 +16,10 @@ raw_raster_files <- c(
 )
 
 raster_files_target <- c(
-    "dist_prkbndry.tif",
-    "dist_station.tif",
-    "dist_trail.tif",
-    "river_density.tif",
+    #"dist_prkbndry.tif",
+    #"dist_station.tif",
+    #"dist_trail.tif",
+    #"river_density.tif",
     "2018_wlprai.tif",
     "2019_wlprai.tif",
     "2020_wlprai.tif",

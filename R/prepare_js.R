@@ -8,17 +8,17 @@ load("./clean_data/grid_objs_data.rda")
 
 ## handle the environmental variables 
 grid_pts_orig <- st_coordinates(grid_objs$grid_sf) * grid_objs$scaling
-steady_env <- grep(list.files("./clean_data/rasters", full.names = T), 
-                pattern='wlprai', invert=TRUE, value=TRUE) |>
-            lapply(terra::rast) |>
-            lapply(terra::extract, grid_pts_orig) |>
-            Reduce(f = cbind)
+#steady_env <- grep(list.files("./clean_data/rasters", full.names = T), 
+#                pattern='wlprai', invert=TRUE, value=TRUE) |>
+#            lapply(terra::rast) |>
+#            lapply(terra::extract, grid_pts_orig) |>
+#            Reduce(f = cbind)
 envX <- list.files("./clean_data/rasters", pattern = "wlprai", full.names = TRUE) |>
     lapply(terra::rast) |>
-    lapply(terra::extract, grid_pts_orig) |>
-    lapply(function(w,ww){
-        cbind(w,ww)
-    }, steady_env)
+    lapply(terra::extract, grid_pts_orig) #|>
+    #lapply(function(w,ww){
+    #    cbind(w,ww)
+    #}, steady_env)
 
 good_grids <- envX |> Reduce(f = cbind) |> rowallgood()|> which()
 
