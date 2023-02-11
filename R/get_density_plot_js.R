@@ -35,7 +35,7 @@ ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = 
 s <- rstan::extract(m_fit, c("s"))$s
 
 density_est <- list()
-png("./res/Figs/js_prey_den_est.png", width = 6 * 2, height = 4 * 2, units = "in",res = 500)
+png("./res/Figs/js_prey_den_est.png", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,2),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 for(i in 1:4){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
@@ -60,6 +60,12 @@ for(i in 1:4){
   points(JS_stan_data$grid_pts, pch = 20, 
          col = adjustcolor("red", alpha.f = 0.2), cex = 0.3)
   plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
+  if(i==1){
+    legend("topright", legend = c("deployed traps",
+                                  "seen individuals",
+                                  "grid points in study area"),
+           pch = c(2,3,20), cex = c(1,1,1),col = c("black","blue",adjustcolor("red", alpha.f = 0.2)))
+  }
 }
 dev.off()
 
@@ -68,6 +74,10 @@ plot(m_fit, pars = c("beta_env"),plotfun = "hist")
 plot(m_fit, pars = c("psi","gamma","phi","p0","alpha1"),plotfun = "trace")
 pairs(m_fit, pars = c("beta_env"))
 
+
+
+
+#### some sanity checks
 png("./res/Figs/js_prey_act_center.png", width = 10 * 2, height = 4 * 2, units = "in",res = 500)
 par(mfrow = c(3,6))
 year <- 4
@@ -87,5 +97,35 @@ for(i in 1:18){
     points(grid_objs$traplocs[rowSums(JS_stan_data$y[i,,,j])>0,], pch = 10, col = "purple")
   }
   plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
+  
 }
 dev.off()
+
+### parameters
+
+
+params <- rstan::extract(m_fit, c("psi","gamma","phi","p0","alpha1","beta_env"))
+png("./res/Figs/js_prey_vital_rate.png", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+par(mfrow = c(2,3),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
+
+plot(density(params$psi*60), main = "initial recruitment", xlab = "")
+polygon(density(params$psi*60), col = "#9b9b9b")
+
+plot(density(params$gamma*60), main = "annual recruitment", xlab = "")
+polygon(density(params$gamma*60), col = "#9b9b9b")
+
+plot(density(params$phi), main = "annual survival", xlab = "")
+polygon(density(params$phi), col = "#9b9b9b")
+
+plot(density(params$p0), main = "baseline detection rate", xlab = "")
+polygon(density(params$p0), col = "#9b9b9b")
+
+plot(density(params$alpha1), main = "detection rate decay", xlab = "")
+polygon(density(params$alpha1), col = "#9b9b9b")
+
+plot(density(params$beta_env), main = "effect of prey", xlab = "")
+polygon(density(params$beta_env), col = "#9b9b9b")
+abline(v=0, lwd = 2)
+dev.off()
+lw_ci <- sapply(params, quantile, .025)
+hi_ci <- sapply(params, quantile, .975)
