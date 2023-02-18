@@ -33,6 +33,8 @@ jaguar_det$Date.Time <- as.Date(jaguar_det$Date.Time,
 jaguar_det <- jaguar_det[(jaguar_det$Date.Time <= date_range[2]) & 
                    (jaguar_det$Date.Time >= date_range[1]),]
 jaguar_det$year <- (format(jaguar_det$Date.Time,"%Y"))
+jaguar_det <- jaguar_det[jaguar_det$Individual.ID!="Undetermined",]
+
 
 
 # get dictionaries for numerical ids of stations and individuals

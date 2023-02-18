@@ -14,26 +14,30 @@ park_boundry <- st_read("./data/mask/Corcovado/Corcovado.shp") |>
 
 years <- 1:4+2017
 
+#### pop size ####
+area_size <- nrow(JS_stan_data$grid_pts) # we have 1km^2 grids
+
 z <- rstan::extract(m_fit, c("z"))$z
 NN <- apply(z,c(1,3),function(w){sum(w==2)}) |> as.data.frame() # total population size
 colnames(NN) <- years
 NN <- melt(NN)
 NN_mean <- aggregate(value~variable, data = NN, FUN = median)
 
-ggplot(NN, aes(x=variable, y=value)) + 
+ggplot(NN, aes(x=variable, y=value/area_size)) + 
   geom_violin() + 
   #geom_boxplot() +
   theme_classic() + 
   xlab("Year") +
-  ylab("Population size") + 
+  ylab("Density (/km^2)") + 
   geom_point(data = NN_mean) + 
   geom_line(aes(group = 1),data = NN_mean)
 
 ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = "in")
 
 
-s <- rstan::extract(m_fit, c("s"))$s
 
+#### local density ####
+s <- rstan::extract(m_fit, c("s"))$s
 density_est <- list()
 png("./res/Figs/js_prey_den_est.png", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,2),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
@@ -49,7 +53,7 @@ for(i in 1:4){
   fields::image.plot(density_est[[i]]$grid$xg, 
             density_est[[i]]$grid$yg, 
             density_est[[i]]$Dn, 
-            zlim = c(0.,30), xlab = "", ylab = "", 
+            zlim = c(0.,18), xlab = "", ylab = "", 
             main = i+2017,
             col = gray.colors(20, start = 0., 
                     end = 0.9, gamma = .8, rev = TRUE))
@@ -70,24 +74,22 @@ for(i in 1:4){
 dev.off()
 
 
-plot(m_fit, pars = c("beta_env"),plotfun = "hist")
-plot(m_fit, pars = c("psi","gamma","phi","p0","alpha1"),plotfun = "trace")
-pairs(m_fit, pars = c("beta_env"))
 
+#### some sanity checks ####
+load("./clean_data/jaguar_trap_mats_js.rda")
+jaguar_id <- jaguar_trap_mats$ids$ind_ids
+inid_plot <- 1:nrow(jaguar_id)
 
-
-
-#### some sanity checks
-png("./res/Figs/js_prey_act_center.png", width = 10 * 2, height = 4 * 2, units = "in",res = 500)
-par(mfrow = c(3,6))
+png("./res/Figs/js_prey_act_center.png", width = 10 * 2, height = 6 * 2, units = "in",res = 500)
+par(mfrow = c(3,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 year <- 4
-for(i in 1:18){
+for(i in inid_plot){
   JSdensity(s,z,JS_stan_data$grid_pts,year,TRUE,
-            nx = 46, ny = 37, main = paste(year+2017,"inid:", i), 
+            nx = 46, ny = 37, main = jaguar_id$jaguar[i], 
             Xl = min(JS_stan_data$grid_pts[,1])-.2, 
             Xu = max(JS_stan_data$grid_pts[,1])+.2,
             Yl = min(JS_stan_data$grid_pts[,2])-.2, 
-            Yu = max(JS_stan_data$grid_pts[,2])+.2,whichguy = i
+            Yu = max(JS_stan_data$grid_pts[,2])+.2, xlab = "", ylab = ""
   )
   points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[year,,])>0,], pch = 2)
   points(JS_stan_data$grid_pts, pch = 20, 
@@ -97,13 +99,18 @@ for(i in 1:18){
     points(grid_objs$traplocs[rowSums(JS_stan_data$y[i,,,j])>0,], pch = 10, col = "purple")
   }
   plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
+  if(i==1){
+    legend("topright", legend = c("deployed traps",
+                                  "trap with detections",
+                                  "posterior of activities center",
+                                  "grid points in study area"),
+           pch = c(2,10,1,20), cex = c(1,1,1,1),col = c("black","purple","blue",adjustcolor("red", alpha.f = 0.2)))
+  }
   
 }
 dev.off()
 
-### parameters
-
-
+#### parameters####
 params <- rstan::extract(m_fit, c("psi","gamma","phi","p0","alpha1","beta_env"))
 png("./res/Figs/js_prey_vital_rate.png", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,3),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
@@ -134,3 +141,7 @@ mi_ci <- sapply(params, quantile, .5)
 write.csv(data.frame(median = mi_ci,
   ci_low = lw_ci, 
   ci_high = hi_ci),"./res/js_lock_prey_ci_vital.csv")  
+
+
+plot(m_fit, pars = c("psi", "gamma", "phi", "p0", "alpha1", "beta_env"), plotfun = "trace")
+ggsave("./res/Figs/js_prey_trace.png", width = 6, height = 4, unit = "in")

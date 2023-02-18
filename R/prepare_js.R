@@ -24,9 +24,9 @@ good_grids <- envX |> Reduce(f = cbind) |> rowallgood()|> which()
 
 envXlist <- envX |> lapply(`[` , good_grids, )
 
-envX <- array(0, dim = c(length(envXlist), dim(envXlist[[1]])))
-means <- colMeans(envXlist[[1]])
-sds <- apply(envXlist[[1]], 2, sd)
+envX <- array(0, dim = c(length(envXlist), dim(as.matrix(envXlist[[1]]))))
+means <- colMeans(as.matrix(envXlist[[1]]))
+sds <- apply(as.matrix(envXlist[[1]]), 2, sd)
 for(i in 1:length(envXlist)){
     envX[i, , ] <- normalizing( as.matrix( envXlist[[i]] ), means, sds)
 }
