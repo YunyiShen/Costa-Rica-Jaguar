@@ -214,4 +214,19 @@ JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,plotit = TRUE,
   return(list(grid = list(xg = xg, yg = yg), Dn = Dn))
 }
 
+density_within_polygon <- function(pts, polyg, s, z, yearid = 1, 
+                                 locked = TRUE, area_scale = 100){
+  point.sf <- st_as_sf(data.frame(x = pts[,1], 
+                                  y = pts[,2], id = 1:nrow(pts)), 
+                       coords = c("x","y"), crs =  CRS("+proj=utm +zone=17")) 
+  good_pts <- st_filter(point.sf, polyg)$id
+  rm(point.sf)
+  z <- z[,,yearid]
+  z <- z == 2
+  if(!locked){s <- s[,,yearid]}
+  s <- apply(s, c(1,2), function(w, good_pts){w%in% good_pts}, good_pts)
+  
+  return(rowSums(s * z) * area_scale / (st_area(polyg)/(1000^2)))
+  
+}
 

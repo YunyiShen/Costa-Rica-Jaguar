@@ -12,6 +12,11 @@ load("./clean_data/js_stan_data.rda")
 park_boundry <- st_read("./data/mask/Corcovado/Corcovado.shp") |> 
   st_transform(crs = CRS("+proj=utm +zone=17"))
 
+old_trap_polygon <- st_read("./data/2007_map/trap_polygon_buffer.shp") |> 
+  st_transform(crs = CRS("+proj=utm +zone=17"))
+old_trap_polygon_inner <- st_read("./data/2007_map/trap_polygon.shp") |> 
+  st_transform(crs = CRS("+proj=utm +zone=17"))
+
 years <- 1:4+2017
 
 #### pop size ####
@@ -23,17 +28,27 @@ colnames(NN) <- years
 NN <- melt(NN)
 NN_mean <- aggregate(value~variable, data = NN, FUN = median)
 
-ggplot(NN, aes(x=variable, y=value/area_size)) + 
+ggplot(NN, aes(x=variable, y=value/area_size * 100)) + 
   geom_violin() + 
   #geom_boxplot() +
   theme_classic() + 
   xlab("Year") +
-  ylab("Density (/km^2)") + 
+  ylab("Density (/100km^2)") + 
+  geom_point(data = NN_mean) + 
+  geom_line(aes(group = 1),data = NN_mean)
+
+ggplot2::ggsave("./res/Figs/js_prey_avg_den_est.png", width = 6, height = 4, unit = "in")
+
+ggplot(NN, aes(x=variable, y=value)) + 
+  geom_violin() + 
+  #geom_boxplot() +
+  theme_classic() + 
+  xlab("Year") +
+  ylab("Population size") + 
   geom_point(data = NN_mean) + 
   geom_line(aes(group = 1),data = NN_mean)
 
 ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = "in")
-
 
 
 #### local density ####
@@ -64,11 +79,16 @@ for(i in 1:4){
   points(JS_stan_data$grid_pts, pch = 20, 
          col = adjustcolor("red", alpha.f = 0.2), cex = 0.3)
   plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
+  plot(as.data.frame(old_trap_polygon$geometry)/grid_objs$scaling, add = T, lty = 2)
+  plot(as.data.frame(old_trap_polygon_inner$geometry)/grid_objs$scaling, add = T, lty = 2)
   if(i==1){
     legend("topright", legend = c("deployed traps",
                                   "seen individuals",
-                                  "grid points in study area"),
-           pch = c(2,3,20), cex = c(1,1,1),col = c("black","blue",adjustcolor("red", alpha.f = 0.2)))
+                                  "grid points in study area",
+                                  "Salom-Perez et al. 2007"),
+           pch = c(2,3,20,NA), cex = c(1,1,1,1), 
+           lty = c(NA,NA,NA,2),
+           col = c("black","blue",adjustcolor("red", alpha.f = 0.2),"black"))
   }
 }
 dev.off()
@@ -145,3 +165,28 @@ write.csv(data.frame(median = mi_ci,
 
 plot(m_fit, pars = c("psi", "gamma", "phi", "p0", "alpha1", "beta_env"), plotfun = "trace")
 ggsave("./res/Figs/js_prey_trace.png", width = 6, height = 4, unit = "in")
+
+#### density in old area ####
+
+density_sample <- list()
+for(i in 1:4){
+  density_sample[[years[i]]] <- density_within_polygon(JS_stan_data$grid_pts * grid_objs$scaling,
+                                                     old_trap_polygon, s, z, i, locked = TRUE)
+}
+density_sample <- Reduce(cbind, density_sample) |> 
+  as.data.frame()
+colnames(density_sample) <- years
+
+density_sample <- melt(density_sample)
+density_sample_mean <- aggregate(value~variable, data = density_sample, FUN = median)
+
+ggplot(density_sample, aes(x=variable, y=value)) + 
+  geom_violin() + 
+  #geom_boxplot() +
+  theme_classic() + 
+  xlab("Year") +
+  ylab("Density (/100km^2) \n in Salom-Perez et al. 2007 range") + 
+  geom_point(data = density_sample_mean) + 
+  geom_line(aes(group = 1),data = density_sample_mean)
+
+ggplot2::ggsave("./res/Figs/js_prey_den_est_SP07.png", width = 6, height = 4, unit = "in")
