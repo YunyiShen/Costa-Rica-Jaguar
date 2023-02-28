@@ -167,7 +167,6 @@ plot(m_fit, pars = c("psi", "gamma", "phi", "p0", "alpha1", "beta_env"), plotfun
 ggsave("./res/Figs/js_prey_trace.png", width = 6, height = 4, unit = "in")
 
 #### density in old area ####
-
 density_sample <- list()
 for(i in 1:4){
   density_sample[[years[i]]] <- density_within_polygon(JS_stan_data$grid_pts * grid_objs$scaling,
@@ -190,3 +189,30 @@ ggplot(density_sample, aes(x=variable, y=value)) +
   geom_line(aes(group = 1),data = density_sample_mean)
 
 ggplot2::ggsave("./res/Figs/js_prey_den_est_SP07.png", width = 6, height = 4, unit = "in")
+
+
+#### density in park ####
+
+density_sample <- list()
+for(i in 1:4){
+  density_sample[[years[i]]] <- density_within_polygon(JS_stan_data$grid_pts * grid_objs$scaling,
+                                                       park_boundry, s, z, i, locked = TRUE)
+}
+density_sample <- Reduce(cbind, density_sample) |> 
+  as.data.frame()
+colnames(density_sample) <- years
+
+density_sample <- melt(density_sample)
+density_sample_mean <- aggregate(value~variable, data = density_sample, FUN = median)
+
+ggplot(density_sample, aes(x=variable, y=value)) + 
+  geom_violin() + 
+  #geom_boxplot() +
+  theme_classic() + 
+  xlab("Year") +
+  ylab("Density (/100km^2) \n within park boundary") + 
+  geom_point(data = density_sample_mean) + 
+  geom_line(aes(group = 1),data = density_sample_mean)
+
+ggplot2::ggsave("./res/Figs/js_prey_den_est_park.png", width = 6, height = 4, unit = "in")
+
