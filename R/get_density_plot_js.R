@@ -153,6 +153,7 @@ polygon(density(params$alpha1), col = "#9b9b9b")
 plot(density(params$beta_env), main = "effect of prey", xlab = "")
 polygon(density(params$beta_env), col = "#9b9b9b")
 abline(v=0, lwd = 2)
+
 dev.off()
 lw_ci <- sapply(params, quantile, .025)
 hi_ci <- sapply(params, quantile, .975)
