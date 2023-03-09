@@ -54,7 +54,7 @@ ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = 
 #### local density ####
 s <- rstan::extract(m_fit, c("s"))$s
 density_est <- list()
-png("./res/Figs/js_prey_den_est.png", width = 8 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+png("./res/Figs/js_prey_den_est.png", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 for(i in 1:7){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
@@ -71,7 +71,7 @@ for(i in 1:7){
             zlim = c(0.,30), xlab = "", ylab = "", 
             main = i+2014,
             col = gray.colors(30, start = 0., 
-                    end = 0.9, gamma = .4, rev = TRUE))
+                    end = 0.9, gamma = .4, rev = TRUE), legend.mar = 7)
   points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)
   for(j in 1:13){ # 13 seen individuals
     points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")

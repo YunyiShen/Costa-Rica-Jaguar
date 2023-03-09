@@ -99,7 +99,7 @@ ggplot2::ggsave("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6,
 z <- rstan::extract(m_fit, c("z"))$z
 s <- rstan::extract(m_fit, c("s"))$s
 density_est <- list()
-png("./res/Figs/js_prey_den_est_restricted_map.png", width = 8 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+png("./res/Figs/js_prey_den_est_restricted_map.png", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 for(i in 1:7){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
@@ -116,7 +116,8 @@ for(i in 1:7){
                      zlim = c(0.,140), xlab = "", ylab = "", 
                      main = i+2014,
                      col = gray.colors(140, start = 0., 
-                                       end = 0.9, gamma = .6, rev = TRUE))
+                                       end = 0.9, gamma = .6, rev = TRUE), 
+                     legend.mar = 8.5)
   points(grid_objs$traplocs[good_traps,][rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)
   for(j in 1:13){ # 13 seen individuals
     points(grid_objs$traplocs[good_traps,][rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")
