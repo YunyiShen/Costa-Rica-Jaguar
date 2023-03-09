@@ -5,10 +5,15 @@ library(reshape)
 options(mc.cores = 4)
 rstan_options(auto_write = TRUE)
 source("./R/utils.R")
+library(jsonlite)
+config <- fromJSON("./config.json")
 
 
-load("./clean_data/js_stan_data.rda")
+#load("./res/js_lock_stan_fit.rda")
+#rm(m_fit)
 load("./clean_data/grid_objs_data.rda")
+load("./clean_data/js_stan_data.rda")
+load("./clean_data/jaguar_trap_mats_js.rda")
 #### set up the data with only the old range
 old_trap_polygon <- st_read("./data/2007_map/trap_polygon_buffer.shp") |> 
   st_transform(crs = CRS("+proj=utm +zone=17"))
@@ -30,8 +35,8 @@ traps.sf <- st_as_sf(data.frame(x = JS_stan_data$X[,1] * grid_objs$scaling,
 good_traps <- st_filter(traps.sf, old_trap_polygon)$id
 
 
-envX_dyna <- JS_stan_data$envX[,,1]|> 
-  apply(1, function(w){(w-mean(w))/sd(w)})
+envX_dyna <- as.matrix(JS_stan_data$envX[,,1])|> 
+  apply(2, function(w){(w-mean(w))/sd(w)})
 envX_dyna <- rowMeans(envX_dyna)
 JS_stan_data$envX <- as.matrix(envX_dyna)
 
@@ -54,7 +59,7 @@ m_fit <- sampling(m_init,  data = JS_stan_data,chains = 4, iter = 1000,
                                          phi = 0.85, alpha1 = .7, 
                                          p0 = .03, beta = rep(0,JS_stan_data$n_env)), 
                   verbose = TRUE)
-save(m_fit, file="./res/js_lock_stan_fit_07_range.rda")
+save(m_fit, grid_objs, jaguar_trap_mats, JS_stan_data, config, file="./res/js_lock_stan_fit_07_range.rda")
 
 #m_fit <- vb(m_init,  data = JS_stan_data, 
 #                  init = function() list(gamma = 0.2, psi = 0.15, 
@@ -64,7 +69,7 @@ save(m_fit, file="./res/js_lock_stan_fit_07_range.rda")
 #### get average density ####
 area_size <- nrow(JS_stan_data$grid_pts) # we have 1km^2 grids
 z <- rstan::extract(m_fit, c("z"))$z
-years <- 1:4 + 2017
+years <- 1:7 + 2014
 NN <- apply(z,c(1,3),function(w){sum(w==2)}) |> as.data.frame() # total population size
 colnames(NN) <- years
 NN <- melt(NN)
@@ -78,13 +83,13 @@ ggplot(data = NN, aes(x=variable, y=value/area_size * 100))  +
   xlab("Year") +
   ylab("Density (/100km^2)") + 
   
-  geom_rect(aes(xmin=0., xmax=4.7, ymin=6.98-2.36, ymax=6.98+2.36), alpha = .002) + 
+  geom_rect(aes(xmin=0., xmax=7.7, ymin=6.98-2.36, ymax=6.98+2.36), alpha = .002) + 
   geom_violin() + 
   geom_point(data = NN_mean) + 
   geom_line(aes(group = 1),data = NN_mean) + 
   geom_hline(yintercept = 6.98, show.legend = "Salom-Perez et al. 2007",
              linetype=2) + 
-  geom_label(x = 0.4, y = 8.25, label = "Salom-Perez\n et al. 2007",
+  geom_label(x = 0.6, y = 8.25, label = "Salom-Perez\n et al. 2007",
              #color="", 
              size=2.5 )
 ggplot2::ggsave("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6, height = 4, unit = "in")
@@ -94,11 +99,11 @@ ggplot2::ggsave("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6,
 z <- rstan::extract(m_fit, c("z"))$z
 s <- rstan::extract(m_fit, c("s"))$s
 density_est <- list()
-png("./res/Figs/js_prey_den_est_restricted_map.png", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
-par(mfrow = c(2,2),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
-for(i in 1:4){
+png("./res/Figs/js_prey_den_est_restricted_map.png", width = 8 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
+for(i in 1:7){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
-                                nx = 15, ny = 18, main = i+2017, 
+                                nx = 15, ny = 18, main = i+2014, 
                                 Xl = min(JS_stan_data$grid_pts[,1])-.2, 
                                 Xu = max(JS_stan_data$grid_pts[,1])+.2,
                                 Yl = min(JS_stan_data$grid_pts[,2])-.2, 
@@ -109,7 +114,7 @@ for(i in 1:4){
                      density_est[[i]]$grid$yg, 
                      density_est[[i]]$Dn, 
                      zlim = c(0.,140), xlab = "", ylab = "", 
-                     main = i+2017,
+                     main = i+2014,
                      col = gray.colors(140, start = 0., 
                                        end = 0.9, gamma = .6, rev = TRUE))
   points(grid_objs$traplocs[good_traps,][rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)

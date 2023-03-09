@@ -1,11 +1,19 @@
 library(sp)
 library(sf)
 library(terra)
+library(jsonlite)
 source("./R/utils.R")
 
-load("./clean_data/jaguar_trap_mats_scr.rda")
+load("./clean_data/jaguar_trap_mats_js.rda")
 lclu <- terra::rast("./clean_data/lulc_2017.tif")
-scaling <- 10000
+config <- jsonlite::fromJSON("config.json")
+
+scaling <- config$scaling
+# setup a grid to approximate the marginalization over space
+# smaller delta values --> better approximation
+delta <- config$resolution
+buffer <- config$buffer
+
 
 trap_mat <- jaguar_trap_mats$trap_mat
 traplocs <- jaguar_trap_mats$ids$trap_ids[,c("x","y")] / scaling # km's
@@ -13,14 +21,11 @@ K.jaguar <- rowSums(trap_mat) # row sums
 cap_mat <- jaguar_trap_mats$cap_mat
 
 
-y3d <- SCR23darray(cap_mat, trap_mat)
-y2d <- apply(y3d, c(1, 2), sum)
+#y3d <- SCR23darray(cap_mat, trap_mat)
+#y2d <- apply(y3d, c(1, 2), sum)
 
 
-# setup a grid to approximate the marginalization over space
-# smaller delta values --> better approximation
-delta <- .1
-buffer <- 1.
+
 x1_grid <- seq(min(traplocs$x) - buffer, 
                max(traplocs$x) + buffer, 
                by = delta)

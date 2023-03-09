@@ -12,7 +12,8 @@ raw_raster_files <- c(
     "WLP_RAI_Rasters/2018_wlprai/hdr.adf",
     "WLP_RAI_Rasters/2019_wlprai/hdr.adf",
     "WLP_RAI_Rasters/2020_wlprai_3/hdr.adf",
-    "WLP_RAI_Rasters/2021_wlprai_3/hdr.adf"
+    "WLP_RAI_Rasters/2021_wlprai_3/hdr.adf",
+    "WLP_RAI_Rasters/wlp_rai_15_21/hdr.adf"
 )
 
 raster_files_target <- c(
@@ -23,7 +24,8 @@ raster_files_target <- c(
     "2018_wlprai.tif",
     "2019_wlprai.tif",
     "2020_wlprai.tif",
-    "2021_wlprai.tif"
+    "2021_wlprai.tif",
+    "wlp_rai_15_21.tif"
 )
 
 raw_raster_files <- file.path(raw_raster_loc, raw_raster_files)

@@ -7,8 +7,8 @@ library(fields)
 source("./R/utils.R")
 
 load("./res/js_lock_prey_stan_fit.rda")
-load("./clean_data/grid_objs_data.rda")
-load("./clean_data/js_stan_data.rda")
+#load("./clean_data/grid_objs_data.rda")
+#load("./clean_data/js_stan_data.rda")
 park_boundry <- st_read("./data/mask/Corcovado/Corcovado.shp") |> 
   st_transform(crs = CRS("+proj=utm +zone=17"))
 
@@ -17,7 +17,7 @@ old_trap_polygon <- st_read("./data/2007_map/trap_polygon_buffer.shp") |>
 old_trap_polygon_inner <- st_read("./data/2007_map/trap_polygon.shp") |> 
   st_transform(crs = CRS("+proj=utm +zone=17"))
 
-years <- 1:4+2017
+years <- 1:7+2014
 
 #### pop size ####
 area_size <- nrow(JS_stan_data$grid_pts) # we have 1km^2 grids
@@ -54,11 +54,11 @@ ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = 
 #### local density ####
 s <- rstan::extract(m_fit, c("s"))$s
 density_est <- list()
-png("./res/Figs/js_prey_den_est.png", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
-par(mfrow = c(2,2),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
-for(i in 1:4){
+png("./res/Figs/js_prey_den_est.png", width = 8 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
+for(i in 1:7){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
-                    nx = 46, ny = 37, main = i+2017, 
+                    nx = 46, ny = 37, main = i+2014, 
                     Xl = min(JS_stan_data$grid_pts[,1])-.2, 
                     Xu = max(JS_stan_data$grid_pts[,1])+.2,
                     Yl = min(JS_stan_data$grid_pts[,2])-.2, 
@@ -68,9 +68,9 @@ for(i in 1:4){
   fields::image.plot(density_est[[i]]$grid$xg, 
             density_est[[i]]$grid$yg, 
             density_est[[i]]$Dn, 
-            zlim = c(0.,18), xlab = "", ylab = "", 
-            main = i+2017,
-            col = gray.colors(20, start = 0., 
+            zlim = c(0.,30), xlab = "", ylab = "", 
+            main = i+2014,
+            col = gray.colors(30, start = 0., 
                     end = 0.9, gamma = .8, rev = TRUE))
   points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)
   for(j in 1:13){ # 13 seen individuals
@@ -96,13 +96,13 @@ dev.off()
 
 
 #### some sanity checks ####
-load("./clean_data/jaguar_trap_mats_js.rda")
+#load("./clean_data/jaguar_trap_mats_js.rda")
 jaguar_id <- jaguar_trap_mats$ids$ind_ids
 inid_plot <- 1:nrow(jaguar_id)
 
 png("./res/Figs/js_prey_act_center.png", width = 10 * 2, height = 6 * 2, units = "in",res = 500)
 par(mfrow = c(3,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
-year <- 4
+year <- 7
 for(i in inid_plot){
   JSdensity(s,z,JS_stan_data$grid_pts,year,TRUE,
             nx = 46, ny = 37, main = jaguar_id$jaguar[i], 

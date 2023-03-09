@@ -1,14 +1,15 @@
 ## this for getting a detection history of individuals
 library(sp)
+library(jsonlite)
 load("./clean_data/CT_loc.rda")
 load("./clean_data/jaguar.rda")
-
+config <- jsonlite::fromJSON("config.json")
 
 
 # deal with dates
-date_range <- c("2018-01-01", "2021-12-31") |> as.Date() # setup a date range
-occ_days <- 7 # number of days in a secondary occasion
-M <- 60 # number of augmented individuals
+date_range <- config$date |> as.Date() # setup a date range
+occ_days <- config$occasion # number of days in a secondary occasion
+M <- config$max_individual # number of augmented individuals
 
 
 year_range <- format(date_range,"%Y")

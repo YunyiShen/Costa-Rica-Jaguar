@@ -8,3 +8,4 @@ stan/spatial-jolly-seber.stan
 *.rda
 *.rds
 R/jolly-seber.R
+zz.writing/*

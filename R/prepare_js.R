@@ -1,7 +1,9 @@
 library(sp)
 library(sf)
 library(terra)
+library(jsonlite)
 source("./R/utils.R")
+config <- fromJSON("./config.json")
 
 load("./clean_data/jaguar_trap_mats_js.rda")
 load("./clean_data/grid_objs_data.rda")
@@ -13,7 +15,7 @@ grid_pts_orig <- st_coordinates(grid_objs$grid_sf) * grid_objs$scaling
 #            lapply(terra::rast) |>
 #            lapply(terra::extract, grid_pts_orig) |>
 #            Reduce(f = cbind)
-envX <- list.files("./clean_data/rasters", pattern = "wlprai", full.names = TRUE) |>
+envX <- list.files("./clean_data/rasters", pattern = config$env_key_words, full.names = TRUE) |>
     lapply(terra::rast) |>
     lapply(terra::extract, grid_pts_orig) #|>
     #lapply(function(w,ww){
