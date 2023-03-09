@@ -6,7 +6,7 @@ library(reshape)
 library(fields)
 source("./R/utils.R")
 
-load("./res/js_lock_prey_stan_fit.rda")
+load("./res/js_lock_stan_fit.rda")
 #load("./clean_data/grid_objs_data.rda")
 #load("./clean_data/js_stan_data.rda")
 park_boundry <- st_read("./data/mask/Corcovado/Corcovado.shp") |> 
@@ -71,7 +71,7 @@ for(i in 1:7){
             zlim = c(0.,30), xlab = "", ylab = "", 
             main = i+2014,
             col = gray.colors(30, start = 0., 
-                    end = 0.9, gamma = .8, rev = TRUE))
+                    end = 0.9, gamma = .4, rev = TRUE))
   points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)
   for(j in 1:13){ # 13 seen individuals
     points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")
@@ -150,7 +150,7 @@ polygon(density(params$p0), col = "#9b9b9b")
 plot(density(params$alpha1), main = "detection rate decay", xlab = "")
 polygon(density(params$alpha1), col = "#9b9b9b")
 
-plot(density(params$beta_env), main = "effect of prey", xlab = "")
+plot(density(params$beta_env), main = "effect of prey", xlab = "", xlim = c(-5,2))
 polygon(density(params$beta_env), col = "#9b9b9b")
 abline(v=0, lwd = 2)
 
@@ -169,7 +169,7 @@ ggsave("./res/Figs/js_prey_trace.png", width = 6, height = 4, unit = "in")
 
 #### density in old area ####
 density_sample <- list()
-for(i in 1:4){
+for(i in 1:7){
   density_sample[[years[i]]] <- density_within_polygon(JS_stan_data$grid_pts * grid_objs$scaling,
                                                      old_trap_polygon, s, z, i, locked = TRUE)
 }
@@ -195,7 +195,7 @@ ggplot2::ggsave("./res/Figs/js_prey_den_est_SP07.png", width = 6, height = 4, un
 #### density in park ####
 
 density_sample <- list()
-for(i in 1:4){
+for(i in 1:7){
   density_sample[[years[i]]] <- density_within_polygon(JS_stan_data$grid_pts * grid_objs$scaling,
                                                        park_boundry, s, z, i, locked = TRUE)
 }
