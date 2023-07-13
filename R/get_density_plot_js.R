@@ -72,7 +72,7 @@ for(i in 1:7){
             main = i+2014,
             col = gray.colors(30, start = 0., 
                     end = 0.9, gamma = .4, rev = TRUE), legend.mar = 7)
-  points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[i,,])>0,], pch = 2)
+  points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[,,i])>0,], pch = 2)
   for(j in 1:13){ # 13 seen individuals
     points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")
   }
