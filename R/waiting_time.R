@@ -123,12 +123,16 @@ dev.off()
 png("./res/Figs_Guanecaste/counts.png", width = 6, height = 4.5, units = "in", res = 300)
 par(mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0), mfrow = c(2,2))
 hist(waiting_time_next_visit_female$counts, freq = F, 
-        breaks = 0:14-.5, main = "", xlab = "# visits by others before revisit, female")
+        breaks = 0:14-.5, main = "", xlab = "# visits by others before revisit, female", 
+        ylim = c(0,1), ylab = "Proportion")
 hist(waiting_time_next_visit_male$counts, breaks = 0:14-.5, freq = F, 
-      main = "",  xlab = "# visits by others before revisit, male")
+      main = "",  xlab = "# visits by others before revisit, male", 
+        ylim = c(0,1), ylab = "Proportion")
 hist(waiting_time_change_owner_female$counts, breaks = 0:14-.5, freq = F, 
-      main = "",  xlab = "# revisits before switching, female")
+      main = "",  xlab = "# revisits before switching, female", 
+        ylim = c(0,1), ylab = "Proportion")
 hist(waiting_time_change_owner_male$counts, breaks = 0:14-.5, freq = F,
-      main = "",  xlab = "# revisits before switching, male")
+      main = "",  xlab = "# revisits before switching, male", 
+        ylim = c(0,1), ylab = "Proportion")
 
 dev.off()
