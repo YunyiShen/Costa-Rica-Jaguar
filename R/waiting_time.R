@@ -136,3 +136,41 @@ hist(waiting_time_change_owner_male$counts, breaks = 0:14-.5, freq = F,
         ylim = c(0,1), ylab = "Proportion")
 
 dev.off()
+
+
+### hacky way to do sex encounter
+dets_in_hacky <- dets_in
+dets_in_hacky$Individual.ID <- dets_in_hacky$Sex
+
+waiting_same_sex <- 
+    get_waiting_time_same_inid(dets_in_hacky, 
+                                stations_in)
+
+waiting_diff_sex <- 
+    get_waiting_time_change_ownership(dets_in_hacky, 
+                                stations_in)
+png("./res/Figs_Guanecaste/waiting_time_between_sex.png", width = 4, height = 3, units = "in", res = 300)
+par(mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
+plot(ecdf(waiting_same_sex$waiting), main = "", 
+     xlab = "Waiting time (days)", ylab = "Empirical CDF", xlim = c(0,100))
+plot(ecdf(waiting_diff_sex$waiting), add = T, col = "red", lty = 2)
+legend(x="bottomright", legend = c("visit by same sex", 
+                "visit by different sex"
+                ), 
+                col = c("black", "red"),
+                lty = c(1,2), pch = rep(16,2))
+dev.off()
+
+png("./res/Figs_Guanecaste/counts_by_sex.png", width = 6, height = 2.25, units = "in", res = 300)
+
+par(mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0), mfrow = c(1,2))
+hist(waiting_same_sex$counts, freq = F, 
+        breaks = 0:10-.5, main = "", xlab = "# visits by others sex before revisit", 
+        ylim = c(0,0.8), ylab = "Proportion")
+
+hist(waiting_diff_sex$counts, breaks = 0:10-.5, freq = F, 
+      main = "",  xlab = "# revisits before switching sex", 
+        ylim = c(0,0.8), ylab = "Proportion")
+
+
+dev.off()
