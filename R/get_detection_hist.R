@@ -33,7 +33,8 @@ jaguar_det <- jaguar_det[jaguar_det$Individual.ID!="Undetermined",]
 trap_ids <- data.frame(unique(combined_CT[,c("StationName","x","y")]))
 trap_ids$id <- 1:nrow(trap_ids)
 
-ind_ids <- data.frame(jaguar = unique(jaguar_det$Individual.ID))
+ind_ids <- data.frame(jaguar = jaguar_det$Individual.ID, sex = jaguar_det$Sex)
+ind_ids <- unique(ind_ids)
 ind_ids$id <- 1:nrow(ind_ids)
 
 n_traps <- nrow(trap_ids)

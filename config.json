@@ -1,7 +1,7 @@
 {
   "date":["2020-01-01","2023-12-31"], // date range of the data
   "occasion": 7, // number of days per secondary occasion
-  "max_individual": 60, // data augmentation number of individuals
+  "max_individual": 30, // data augmentation number of individuals
   "scaling": 10000, // how many meters to scale
   "buffer": 1.0, // buffer range, in scale km
   "resolution": 0.1, // grid size, in scale km

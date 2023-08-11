@@ -29,3 +29,8 @@
 							./data/Guanecaste/Guanecaste_trap_loc.csv 
 	Rscript ./R/pre_processing_loc.R
 
+./res/two_beach_model.rda: ./clean_data/Guanecaste/jaguar_trap_mats_scr.rda \
+							./clean_data/Guanecaste/jaguar.rda\
+							./clean_data/Guanecaste/jaguar_trap_mats_scr.rda
+	Rscript ./R/two_beach_model.R
+	rm clean_data/Guanecaste/*.rda
