@@ -4,8 +4,8 @@ library(terra)
 library(jsonlite)
 source("./R/utils.R")
 
-load("./clean_data/jaguar_trap_mats_js.rda")
-lclu <- terra::rast("./clean_data/lulc_2017.tif")
+load("./clean_data/Guanecaste/jaguar_trap_mats_scr.rda")
+lclu <- terra::rast("./clean_data/shoreline.tif")
 config <- jsonlite::fromJSON("config.json")
 
 scaling <- config$scaling
@@ -34,7 +34,7 @@ x2_grid <- seq(min(traplocs$y) - buffer,
                by = delta)
 grid_pts <- expand.grid(x = x1_grid, y = x2_grid) 
 lu_grid <- terra::extract(y = grid_pts*scaling, x = lclu)
-grid_pts <- grid_pts[!is.na(lu_grid$lulc_2017),]
+grid_pts <- grid_pts[!is.na(lu_grid$shoreline),]
 
 
 # filter points based on distance to traps ---------------
@@ -49,4 +49,4 @@ grid_sf <- grid_sf[unlist(lapply(st_intersects(grid_sf, trap_buffer), length)) >
 #plot(trap_sf, add = TRUE)
 
 grid_objs <- list(grid_sf = grid_sf, trap_sf = trap_sf, trap_buffer = trap_buffer, traplocs = traplocs, scaling = scaling)
-save(grid_objs, file = "./clean_data/grid_objs_data.rda")
+save(grid_objs, file = "./clean_data/Guanecaste/grid_objs_data.rda")

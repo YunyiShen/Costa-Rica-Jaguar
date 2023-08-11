@@ -1,4 +1,5 @@
 data/JaguarEvents2015-2021_EDIT.csv
+data/Guanecaste/*
 R/scr0-wolverine-poisson-integrated.R
 %stan/discrete-ipp-scr.stan
 stan/spatial-cormack-jolly-seber.stan

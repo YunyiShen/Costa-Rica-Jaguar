@@ -31,11 +31,12 @@ functions {
 
 data {
   int<lower = 1> M; // upper bound, number of individuals
-  int<lower = 1> p_env; // number of environmental variables
+  int<lower = 1> n_env; // number of environmental variables
   int<lower = 1> n_trap; // number of traps
   int<lower = 1> n_grid; // number of grids
+  int<lower = 1> Kmax;
   matrix[n_grid, 2] grid_pts; // grid locations
-  matrix[n_grid, p_env] env; // environmental variables
+  matrix[n_grid, n_env] envX; // environmental variables
   int<lower = 0, upper = 1> y[M, n_trap,Kmax]; // detection history, it is ok to ignore time order etc. as we assume secondary occasions are exchangable
   int<lower = 0, upper = 1> deploy[n_trap,Kmax]; //deployment history of all camera traps at all occasions )(primary and secondary)
   matrix[n_trap, 2] X; //trap locations
@@ -74,10 +75,8 @@ parameters {
 
 transformed parameters {
   
-  real log_p0 = log(p0);
-  real log_en;
+  real<upper = 0> log_p0 = log(p0);
   real<upper = 0> log_psi = log(psi);
-  real<upper = 0> log1m_psi = log(1-psi);
   matrix[M, n_grid] log_lik;
 
   {
@@ -101,19 +100,24 @@ transformed parameters {
     }
     
     // if the individual is not alive, the detection probability
-    log_obs_nothere = to_vector(y_red_sum[:, 1]) * rep_row_vector(negINF,n_grid);
+    log_obs_nothere = to_vector(y_red_sum) * rep_row_vector(negINF,n_grid);
+    log_obs_nothere += log1m_exp(log_psi);
+    log_obs += log_psi;
 
     log_lik = log_sum_exp_helper(log_obs, log_obs_nothere,  M, n_grid) + rep_vector(1,M) * log_probs';// log likelihood of each individual at each grid cell
 
   }
 }
 
+
+
+
 model {
   // priors
   psi ~ beta(1, 1);
   p0 ~ beta(1, 1);
   alpha1 ~ gamma(1, 1);
-  beta_env ~ normal(0, 100);
+  beta_env ~ normal(0, 10);
   
   // likelihood
   for(i in 1:M){
@@ -128,21 +132,17 @@ generated quantities {
 
   // local calculations
   {
-    matrix[n_grid,n_trap] log_lik_center_grid; // we need to save all traps, given we are not marginalize over grids any more 
+    matrix[M, n_grid] log_lik_center_grid; // we need to save all traps, given we are not marginalize over grids any more 
     
 
-    // local stuff for FFBS
+    
     real negINF = -1e20; // local negative inf, to work in log scale avoiding underflow, such a effective negInf is needed to avoid autograd error caused by exp(-Inf) 
     matrix[n_grid, n_trap] dist_tmp;
-    real negINF = -1e20;
     matrix[M, n_grid] log_obs;
     matrix[M, n_grid] log_obs_nothere;
-    
-    vector[n_grid] log_probs; 
-
-    dist_tmp = log_p0 - alpha1 * sq_dist;
-
     vector[n_grid] log_probs; // log Poisson intensity, at pixels, up to a constant (we do not need it since we condition on numer of total points)
+    
+
     
     dist_tmp = log_p0 - alpha1 * sq_dist; // distance sampling thing
     log_probs = log_softmax( envX * beta_env);// intensity at that year
@@ -157,21 +157,21 @@ generated quantities {
     }
     
     // if the individual is not alive, the detection probability
-    log_obs_nothere = to_vector(y_red_sum[:, 1]) * rep_row_vector(negINF,n_grid);
+    log_obs_nothere = to_vector(y_red_sum) * rep_row_vector(negINF,n_grid);
     
     // use to construct z
-    log_obs_nothere = log_obs_nothere + rep_vector(1,M) * log_probs';
-    log_obs = log_obs + rep_vector(1,M) * log_probs';
+    log_obs_nothere = log_obs_nothere + rep_vector(1,M) * log_probs' + log1m_exp(log_psi);
+    log_obs = log_obs + rep_vector(1,M) * log_probs' + log_psi;
     for (j in 1:M) {
       z[j] = bernoulli_logit_rng(log_sum_exp(log_obs[j, :])-
                                     log_sum_exp(log_obs_nothere[j, :]));
     }
 
     // construct s
-    log_lik = log_sum_exp_helper(log_obs, log_obs_nothere,  M, n_grid);// log likelihood of each individual at each grid cell
+    log_lik_center_grid = log_sum_exp_helper(log_obs, log_obs_nothere,  M, n_grid);// log likelihood of each individual at each grid cell
 
     for (j in 1:M) {
-      s[j] = categorical_rng(softmax(log_lik[j, :]));
+      s[j] = categorical_rng(softmax(to_vector(log_lik_center_grid[j, :])));
     }
 
 

@@ -1,51 +1,31 @@
-./res/js_lock_stan_fit.rda: ./clean_data/js_stan_data.rda
-	Rscript ./R/run_JS_lock.R
-	rm clean_data/*.rda
+### Guanecaste SCR
 
-#./res/js_stan_fit.rda: ./clean_data/js_stan_data.rda
-#	Rscript ./R/run_JS.R
-
-./clean_data/js_stan_data.rda: ./clean_data/jaguar_trap_mats_js.rda \
-								./clean_data/grid_objs_data.rda \
-								./config.json \
-								./clean_data/rasters/wlp_rai_15_21.tif
-								#./clean_data/rasters/2018_wlprai.tif \
-								
-								#./clean_data/rasters/dist_prkbndry.tif \
-	Rscript ./R/prepare_js.R
-
-./clean_data/rasters/2018_wlprai.tif: ./data/SpatialCovariates/WLP_RAI_Rasters/2018_wlprai/hdr.adf
-	Rscript ./R/pre_processing_rasters.R
-
-#./clean_data/rasters/dist_prkbndry.tif: ./data/SpatialCovariates/dist_prkbndry/hdr.adf
-#	Rscript ./R/pre_processing_rasters.R
-
-
-./res/scr_stan_fit.rda: ./clean_data/scr_stan_data.rda
+./res/Guanecaste_scr_stan_fit.rda: ./clean_data/Guanecaste/scr_stan_data.rda
 	Rscript ./R/run_SCR.R
+	rm clean_data/Guanecaste/*.rda
 
-./clean_data/scr_stan_data.rda: ./clean_data/jaguar_trap_mats_scr.rda \
-								./clean_data/grid_objs_data.rda
+./clean_data/Guanecaste/scr_stan_data.rda: ./clean_data/Guanecaste/jaguar_trap_mats_scr.rda \
+								./clean_data/Guanecaste/grid_objs_data.rda
 	Rscript ./R/prepare_scr.R
 
-./clean_data/grid_objs_data.rda: ./clean_data/jaguar_trap_mats_scr.rda \
-																 ./clean_data/lulc_2017.tif \
+./clean_data/Guanecaste/grid_objs_data.rda: ./clean_data/Guanecaste/jaguar_trap_mats_scr.rda \
+																 ./clean_data/shoreline.tif \
 																 ./config.json
 	Rscript ./R/form_grids.R
 
-./clean_data/jaguar_trap_mats_scr.rda: ./clean_data/CT_loc.rda	./clean_data/jaguar.rda
+./clean_data/Guanecaste/jaguar_trap_mats_scr.rda: ./clean_data/Guanecaste/CT_loc.rda	./clean_data/Guanecaste/jaguar.rda
 	Rscript ./R/get_detection_hist.R
 
-./clean_data/jaguar_trap_mats_js.rda: ./clean_data/CT_loc.rda	./clean_data/jaguar.rda
+./clean_data/Guanecaste/jaguar_trap_mats_js.rda: ./clean_data/Guanecaste/CT_loc.rda	./clean_data/Guanecaste/jaguar.rda
 	Rscript ./R/get_detection_hist_js.R
 	
-./clean_data/lulc_2017.tif: ./data/Camera_loc/Costa*	\
-							./data/detections/JaguarEvents2015-2021_EDIT.csv \
-							./data/mask/NASA_OSA/lulc_2017.tif 
+./clean_data/shoreline.tif: ./data/Guanecaste/shore_line/CRI_adm0*	\
+							./data/Guanecaste/jaguar_capture.csv \
+							./data/Guanecaste/Guanecaste_trap_loc.csv 
 	Rscript ./R/pre_processing_loc.R
 
-./clean_data/CT_loc.rda: ./data/Camera_loc/Costa*	\
-						 ./data/detections/JaguarEvents2015-2021_EDIT.csv \
-						 ./data/mask/NASA_OSA/lulc_2017.tif 
+./clean_data/Guanecaste/CT_loc.rda: ./data/Guanecaste/shore_line/CRI_adm0*	\
+							./data/Guanecaste/jaguar_capture.csv \
+							./data/Guanecaste/Guanecaste_trap_loc.csv 
 	Rscript ./R/pre_processing_loc.R
 
