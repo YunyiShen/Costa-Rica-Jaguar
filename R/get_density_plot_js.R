@@ -94,6 +94,47 @@ for(i in 1:7){
 dev.off()
 
 
+#### sd ####
+png("./res/Figs/js_prey_den_est_relative_sd.png", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
+for(i in 1:7){
+  density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
+                                nx = 46, ny = 37, main = i+2014, 
+                                Xl = min(JS_stan_data$grid_pts[,1])-.2, 
+                                Xu = max(JS_stan_data$grid_pts[,1])+.2,
+                                Yl = min(JS_stan_data$grid_pts[,2])-.2, 
+                                Yu = max(JS_stan_data$grid_pts[,2])+.2,
+                                plotit = FALSE, calculate_sd = TRUE
+  )
+  fields::image.plot(density_est[[i]]$grid$xg, 
+                     density_est[[i]]$grid$yg, 
+                     (density_est[[i]]$Dn_sd+1/2000)/(density_est[[i]]$Dn+1/2000), 
+                     zlim = c(0.,50), xlab = "", ylab = "", 
+                     main = i+2014,
+                     col = gray.colors(30, start = 0., 
+                                       end = 0.9, gamma = .8, rev = TRUE), legend.mar = 7)
+  points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[,,i])>0,], pch = 2)
+  for(j in 1:13){ # 13 seen individuals
+    points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")
+  }
+  points(JS_stan_data$grid_pts, pch = 20, 
+         col = adjustcolor("red", alpha.f = 0.2), cex = 0.3)
+  plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
+  plot(as.data.frame(old_trap_polygon$geometry)/grid_objs$scaling, add = T, lty = 2)
+  plot(as.data.frame(old_trap_polygon_inner$geometry)/grid_objs$scaling, add = T, lty = 2)
+  if(i==1){
+    legend("topright", legend = c("deployed traps",
+                                  "seen individuals",
+                                  "grid points in study area",
+                                  "Salom-Perez et al. 2007"),
+           pch = c(2,3,20,NA), cex = c(1,1,1,1), 
+           lty = c(NA,NA,NA,2),
+           col = c("black","blue",adjustcolor("red", alpha.f = 0.2),"black"))
+  }
+}
+dev.off()
+
+
 
 #### some sanity checks ####
 #load("./clean_data/jaguar_trap_mats_js.rda")

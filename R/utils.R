@@ -153,7 +153,7 @@ SCR0density<-function (obj, nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL,
 JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,plotit = TRUE,
                       nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, 
                       Yu = NULL, scalein = 100, scaleout = 100, 
-                      col="gray",ncolors = 10,whichguy=NULL,plot_scale = TRUE,...){
+                      col="gray",ncolors = 10,whichguy=NULL,plot_scale = TRUE,calculate_sd = FALSE,...){
 
   if(locked){
     Sxout <- pts[s,1] |> 
@@ -183,16 +183,31 @@ JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,plotit = TRUE,
   xg <- seq(Xl, Xu, , nx)
   yg <- seq(Yl, Yu, , ny)
   guy<-col(Sxout)
-  Sxout <- cut(Sxout[z == 2], breaks = xg)
-  Syout <- cut(Syout[z == 2], breaks = yg)
+  
+  
   #Sxout <- cut(Sxout, breaks = xg)
   #Syout <- cut(Syout, breaks = yg)
   if(is.null(whichguy)){
-    Dn <- table(Sxout, Syout)/niter
     area <- (yg[2] - yg[1]) * (xg[2] - xg[1]) * scalein
+    if(calculate_sd){
+      Dn_sd <- sapply(1:nrow(Sxout), function(i, Sxout, Syout, z, xg,yg, area, scalein){
+        table(cut(Sxout[i,z[i,]==2], breaks = xg), 
+            cut(Syout[i,z[i,]==2], breaks = yg))/area * scalein
+      }, Sxout, Syout, z, xg,yg, area, scalein) |>
+        apply(1,sd) |> 
+        matrix(nrow = nx-1)
+    }
+    else Dn_sd <- NULL
+    
+    Sxout <- cut(Sxout[z == 2], breaks = xg)
+    Syout <- cut(Syout[z == 2], breaks = yg)
+    Dn <- table(Sxout, Syout)/niter
+    
     Dn <- (Dn/area) * scaleout
   }
   else{
+    Sxout <- cut(Sxout[z == 2], breaks = xg)
+    Syout <- cut(Syout[z == 2], breaks = yg)
     Dn<-table(Sxout[guy==whichguy],Syout[guy==whichguy] )/niter
   }
   
@@ -211,7 +226,7 @@ JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,plotit = TRUE,
     box()
   }
 
-  return(list(grid = list(xg = xg, yg = yg), Dn = Dn))
+  return(list(grid = list(xg = xg, yg = yg), Dn = Dn, Dn_sd = Dn_sd))
 }
 
 density_within_polygon <- function(pts, polyg, s, z, yearid = 1, 
