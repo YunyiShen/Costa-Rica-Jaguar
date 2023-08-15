@@ -109,22 +109,33 @@ for(i in inid_plot){
             Xl = min(JS_stan_data$grid_pts[,1])-.2, 
             Xu = max(JS_stan_data$grid_pts[,1])+.2,
             Yl = min(JS_stan_data$grid_pts[,2])-.2, 
-            Yu = max(JS_stan_data$grid_pts[,2])+.2, xlab = "", ylab = ""
+            Yu = max(JS_stan_data$grid_pts[,2])+.2, xlab = "", ylab = "", plot_scale = (i%%4 == 0)
   )
+  plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
   points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[year,,])>0,], pch = 2)
   points(JS_stan_data$grid_pts, pch = 20, 
          col = adjustcolor("red", alpha.f = 0.2), cex = 0.3)
-  points(JS_stan_data$grid_pts[s[,i],],col = "blue")
-  for(j in 1:4){
-    points(grid_objs$traplocs[rowSums(JS_stan_data$y[i,,,j])>0,], pch = 10, col = "purple")
+  points(JS_stan_data$grid_pts[s[,i],],col = adjustcolor("blue", alpha.f = 0.2), pch = 1, cex = 0.5)
+  
+    
+  for(j in 1:7){
+    points(grid_objs$traplocs[rowSums(JS_stan_data$y[i,,,j])>0,], pch = 17, col = "purple", cex = 1.2)
   }
-  plot(as.data.frame(park_boundry$geometry)/grid_objs$scaling, add = T)
+  
+  sort_id <- sort(s[,i])
+  #mode_idx <- as.numeric(names(which.max(summary( as.factor( s[,i] )))))
+  mode_idx <- sort_id[which(!duplicated(sort(s[,i])))[which.max( diff(which(!duplicated(sort(s[,i]))) )) ]]
+  
+  points(JS_stan_data$grid_pts[mode_idx,1],  JS_stan_data$grid_pts[mode_idx,2],
+         col = "gold", pch = 16, cex = 1.2)
+  
   if(i==1){
     legend("topright", legend = c("deployed traps",
                                   "trap with detections",
                                   "posterior of activities center",
+                                  "posterior mode of activities center",
                                   "grid points in study area"),
-           pch = c(2,10,1,20), cex = c(1,1,1,1),col = c("black","purple","blue",adjustcolor("red", alpha.f = 0.2)))
+           pch = c(2,17,1,16,20), cex = c(1,1,1,1,1),col = c("black","purple","blue","gold",adjustcolor("red", alpha.f = 0.2)))
   }
   
 }

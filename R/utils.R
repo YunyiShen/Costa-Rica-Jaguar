@@ -153,7 +153,7 @@ SCR0density<-function (obj, nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL,
 JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,plotit = TRUE,
                       nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, 
                       Yu = NULL, scalein = 100, scaleout = 100, 
-                      col="gray",ncolors = 10,whichguy=NULL,...){
+                      col="gray",ncolors = 10,whichguy=NULL,plot_scale = TRUE,...){
 
   if(locked){
     Sxout <- pts[s,1] |> 
@@ -207,7 +207,7 @@ JSdensity <- function(s, z, pts,yearid = 1,locked = FALSE,plotit = TRUE,
   
   
     image(xg, yg, Dn, col = cc,...)
-    image.scale(Dn, col = cc)
+    if(plot_scale) image.scale(Dn, col = cc)
     box()
   }
 
