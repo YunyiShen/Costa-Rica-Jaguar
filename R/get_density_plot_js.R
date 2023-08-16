@@ -5,6 +5,7 @@ library(ggplot2)
 library(reshape)
 library(fields)
 source("./R/utils.R")
+source("./R/forecast_js.R")
 
 load("./res/js_lock_stan_fit.rda")
 #load("./clean_data/grid_objs_data.rda")
@@ -18,16 +19,21 @@ old_trap_polygon_inner <- st_read("./data/2007_map/trap_polygon.shp") |>
   st_transform(crs = CRS("+proj=utm +zone=17"))
 
 years <- 1:7+2014
+year_out <- 2
+years_w_forcast <- 1:(7+year_out) + 2014 
 
 #### pop size ####
 area_size <- nrow(JS_stan_data$grid_pts) # we have 1km^2 grids
 
 z <- rstan::extract(m_fit, c("z"))$z
+forecast_z <- forecast_js(m_fit, year_out, recruit_factor = 1)
 NN <- apply(z,c(1,3),function(w){sum(w==2)}) |> as.data.frame() # total population size
-colnames(NN) <- years
+NN <- cbind(NN, apply(forecast_z,c(1,3),function(w){sum(w==2)}) |> as.data.frame())
+colnames(NN) <- years_w_forcast
 NN <- melt(NN)
 NN_mean <- aggregate(value~variable, data = NN, FUN = median)
 
+png("./res/Figs/js_prey_avg_den_est.png", width = 6, height = 4, units = "in",res = 500)
 ggplot(NN, aes(x=variable, y=value/area_size * 100)) + 
   geom_violin() + 
   #geom_boxplot() +
@@ -35,10 +41,14 @@ ggplot(NN, aes(x=variable, y=value/area_size * 100)) +
   xlab("Year") +
   ylab("Density (/100km^2)") + 
   geom_point(data = NN_mean) + 
-  geom_line(aes(group = 1),data = NN_mean)
+  geom_line(aes(group = 1),data = NN_mean) + 
+  geom_vline(xintercept = 7.5, lty = 2)
+  #geom_rect(aes(xmin=7.5, xmax=9.5, ymin=0, ymax=3), alpha = .0002) 
+dev.off()
 
-ggplot2::ggsave("./res/Figs/js_prey_avg_den_est.png", width = 6, height = 4, unit = "in")
+#ggplot2::ggsave("./res/Figs/js_prey_avg_den_est.png", width = 6, height = 4, unit = "in")
 
+png("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, units = "in",res = 500)
 ggplot(NN, aes(x=variable, y=value)) + 
   geom_violin() + 
   #geom_boxplot() +
@@ -46,9 +56,10 @@ ggplot(NN, aes(x=variable, y=value)) +
   xlab("Year") +
   ylab("Population size") + 
   geom_point(data = NN_mean) + 
-  geom_line(aes(group = 1),data = NN_mean)
-
-ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = "in")
+  geom_line(aes(group = 1),data = NN_mean)+ 
+  geom_vline(xintercept = 7.5, lty = 2)
+dev.off()
+#ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = "in")
 
 
 #### local density ####
@@ -142,9 +153,22 @@ jaguar_id <- jaguar_trap_mats$ids$ind_ids
 inid_plot <- 1:nrow(jaguar_id)
 
 png("./res/Figs/js_prey_act_center.png", width = 10 * 2, height = 6 * 2, units = "in",res = 500)
+
+
 par(mfrow = c(3,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 year <- 7
+avg_in <- 0 * inid_plot
+
 for(i in inid_plot){
+  si <- s[,i]
+  s_loc <- JS_stan_data$grid_pts[si, ] * grid_objs$scaling 
+  s_loc <- lapply(1:nrow(s_loc), function(i,s_loc){
+    st_point(s_loc[i,])
+  }, s_loc) |>
+    st_sfc(crs = "+proj=utm +zone=17")
+  lst <- st_intersects( park_boundry,s_loc)[[1]]  |> length()
+  avg_in[i] <- lst/nrow(s)
+  
   JSdensity(s,z,JS_stan_data$grid_pts,year,TRUE,
             nx = 46, ny = 37, main = jaguar_id$jaguar[i], 
             Xl = min(JS_stan_data$grid_pts[,1])-.2, 
@@ -178,7 +202,7 @@ for(i in inid_plot){
                                   "grid points in study area"),
            pch = c(2,17,1,16,20), cex = c(1,1,1,1,1),col = c("black","purple","blue","gold",adjustcolor("red", alpha.f = 0.2)))
   }
-  
+  text(20.55, 93.5, label = paste0(signif(avg_in[i],3)*100,"% in"))
 }
 dev.off()
 

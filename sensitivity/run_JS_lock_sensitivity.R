@@ -5,6 +5,7 @@ library(reshape)
 options(mc.cores = 4)
 rstan_options(auto_write = TRUE)
 source("./R/utils.R")
+source("./R/forecast_js.R")
 library(jsonlite)
 config <- fromJSON("./config.json")
 
@@ -69,13 +70,18 @@ save(m_fit, grid_objs, jaguar_trap_mats, JS_stan_data, config, file="./res/js_lo
 #### get average density ####
 area_size <- nrow(JS_stan_data$grid_pts) # we have 1km^2 grids
 z <- rstan::extract(m_fit, c("z"))$z
-years <- 1:7 + 2014
+years <- 1:7+2014
+year_out <- 2
+years_w_forcast <- 1:(7+year_out) + 2014 
+
+forecast_z <- forecast_js(m_fit, year_out, recruit_factor = 1)
 NN <- apply(z,c(1,3),function(w){sum(w==2)}) |> as.data.frame() # total population size
-colnames(NN) <- years
+NN <- cbind(NN, apply(forecast_z,c(1,3),function(w){sum(w==2)}) |> as.data.frame())
+colnames(NN) <- years_w_forcast
 NN <- melt(NN)
 NN_mean <- aggregate(value~variable, data = NN, FUN = median)
 
-
+png("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6, height = 4, units = "in",res = 500)
 ggplot(data = NN, aes(x=variable, y=value/area_size * 100))  + 
   geom_violin() + 
   #geom_boxplot() +
@@ -83,7 +89,7 @@ ggplot(data = NN, aes(x=variable, y=value/area_size * 100))  +
   xlab("Year") +
   ylab("Density (/100km^2)") + 
   
-  geom_rect(aes(xmin=0., xmax=7.7, ymin=6.98-2.36, ymax=6.98+2.36), alpha = .002) + 
+  geom_rect(aes(xmin=0., xmax=9.7, ymin=6.98-2.36, ymax=6.98+2.36), alpha = .002) + 
   geom_violin() + 
   geom_point(data = NN_mean) + 
   geom_line(aes(group = 1),data = NN_mean) + 
@@ -91,8 +97,10 @@ ggplot(data = NN, aes(x=variable, y=value/area_size * 100))  +
              linetype=2) + 
   geom_label(x = 0.6, y = 8.25, label = "Salom-Perez\n et al. 2007",
              #color="", 
-             size=2.5 )
-ggplot2::ggsave("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6, height = 4, unit = "in")
+             size=2.5 ) + 
+  geom_vline(xintercept = 7.5, lty = 2)
+dev.off()
+#ggplot2::ggsave("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6, height = 4, unit = "in")
 
 
 #### plot density ####
