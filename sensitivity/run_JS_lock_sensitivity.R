@@ -68,6 +68,7 @@ save(m_fit, grid_objs, jaguar_trap_mats, JS_stan_data, config, file="./res/js_lo
 #                                         p0 = .03, beta = rep(0,JS_stan_data$n_env)))
 
 #### get average density ####
+load("./res/js_lock_stan_fit_07_range.rda")
 area_size <- nrow(JS_stan_data$grid_pts) # we have 1km^2 grids
 z <- rstan::extract(m_fit, c("z"))$z
 years <- 1:7+2014
@@ -82,25 +83,32 @@ NN <- melt(NN)
 NN_mean <- aggregate(value~variable, data = NN, FUN = median)
 
 png("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6, height = 4, units = "in",res = 500)
-ggplot(data = NN, aes(x=variable, y=value/area_size * 100))  + 
+js_prey_avg_den_est_restricted_area <- ggplot(data = NN, aes(x=variable, y=value/area_size * 100))  + 
   geom_violin() + 
   #geom_boxplot() +
   theme_classic() + 
   xlab("Year") +
   ylab("Density (/100km^2)") + 
   
-  geom_rect(aes(xmin=0., xmax=9.7, ymin=6.98-2.36, ymax=6.98+2.36), alpha = .002) + 
+  geom_rect(aes(xmin=0.45, xmax=7.7+year_out, ymin=6.98-2.36, ymax=6.98+2.36), alpha = .002) + 
   geom_violin() + 
   geom_point(data = NN_mean) + 
   geom_line(aes(group = 1),data = NN_mean) + 
   geom_hline(yintercept = 6.98, show.legend = "Salom-Perez et al. 2007",
              linetype=2) + 
-  geom_label(x = 0.6, y = 8.25, label = "Salom-Perez\n et al. 2007",
+  geom_label(x = 0.99, y = 9.25, label = "Salom-Perez\n et al. 2007",
              #color="", 
-             size=2.5 ) + 
-  geom_vline(xintercept = 7.5, lty = 2)
+             size=2.5 ) #+ 
+  #geom_vline(xintercept = 7.5, lty = 2)
 dev.off()
 #ggplot2::ggsave("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6, height = 4, unit = "in")
+
+### combine with Fig2 
+load("./res/Figs/js_prey_den_est_park.rda")
+library(ggpubr)
+jpeg("./res/Figs/js_prey_avg_den_est_restricted_area_comb.jpg", width = 6, height = 5, unit = "in", res = 500)
+ggarrange(js_prey_den_est_park, js_prey_avg_den_est_restricted_area, nrow = 2, labels="AUTO", align = "hv")
+dev.off()
 
 
 #### plot density ####

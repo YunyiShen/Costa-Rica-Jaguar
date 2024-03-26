@@ -33,7 +33,7 @@ colnames(NN) <- years_w_forcast
 NN <- melt(NN)
 NN_mean <- aggregate(value~variable, data = NN, FUN = median)
 
-png("./res/Figs/js_prey_avg_den_est.png", width = 6, height = 4, units = "in",res = 500)
+jpeg("./res/Figs/js_prey_avg_den_est.jpg", width = 6, height = 4, units = "in",res = 500)
 ggplot(NN, aes(x=variable, y=value/area_size * 100)) + 
   geom_violin() + 
   #geom_boxplot() +
@@ -46,9 +46,9 @@ ggplot(NN, aes(x=variable, y=value/area_size * 100)) +
   #geom_rect(aes(xmin=7.5, xmax=9.5, ymin=0, ymax=3), alpha = .0002) 
 dev.off()
 
-#ggplot2::ggsave("./res/Figs/js_prey_avg_den_est.png", width = 6, height = 4, unit = "in")
+#ggplot2::ggsave("./res/Figs/js_prey_avg_den_est.jpg", width = 6, height = 4, unit = "in")
 
-png("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, units = "in",res = 500)
+jpeg("./res/Figs/js_prey_pop_est.jpg", width = 6, height = 4, units = "in",res = 500)
 ggplot(NN, aes(x=variable, y=value)) + 
   geom_violin() + 
   #geom_boxplot() +
@@ -59,13 +59,13 @@ ggplot(NN, aes(x=variable, y=value)) +
   geom_line(aes(group = 1),data = NN_mean)+ 
   geom_vline(xintercept = 7.5, lty = 2)
 dev.off()
-#ggplot2::ggsave("./res/Figs/js_prey_pop_est.png", width = 6, height = 4, unit = "in")
+#ggplot2::ggsave("./res/Figs/js_prey_pop_est.jpg", width = 6, height = 4, unit = "in")
 
 
 #### local density ####
 s <- rstan::extract(m_fit, c("s"))$s
 density_est <- list()
-png("./res/Figs/js_prey_den_est.png", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+jpeg("./res/Figs/js_prey_den_est.jpg", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 for(i in 1:7){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
@@ -106,7 +106,7 @@ dev.off()
 
 
 #### sd ####
-png("./res/Figs/js_prey_den_est_relative_sd.png", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+jpeg("./res/Figs/js_prey_den_est_relative_sd.jpg", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 for(i in 1:7){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
@@ -152,7 +152,7 @@ dev.off()
 jaguar_id <- jaguar_trap_mats$ids$ind_ids
 inid_plot <- 1:nrow(jaguar_id)
 
-png("./res/Figs/js_prey_act_center.png", width = 10 * 2, height = 6 * 2, units = "in",res = 500)
+jpeg("./res/Figs/js_prey_act_center.jpg", width = 10 * 2, height = 6 * 2, units = "in",res = 500)
 
 
 par(mfrow = c(3,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
@@ -208,7 +208,7 @@ dev.off()
 
 #### parameters####
 params <- rstan::extract(m_fit, c("psi","gamma","phi","p0","alpha1","beta_env"))
-png("./res/Figs/js_prey_vital_rate.png", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
+jpeg("./res/Figs/js_prey_vital_rate.jpg", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
 par(mfrow = c(2,3),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
 
 plot(density(params$psi*60), main = "initial recruitment", xlab = "")
@@ -241,7 +241,7 @@ write.csv(data.frame(median = mi_ci,
 
 
 plot(m_fit, pars = c("psi", "gamma", "phi", "p0", "alpha1", "beta_env"), plotfun = "trace")
-ggsave("./res/Figs/js_prey_trace.png", width = 6, height = 4, unit = "in")
+ggsave("./res/Figs/js_prey_trace.jpg", width = 6, height = 4, unit = "in")
 
 #### density in old area ####
 density_sample <- list()
@@ -265,7 +265,7 @@ ggplot(density_sample, aes(x=variable, y=value)) +
   geom_point(data = density_sample_mean) + 
   geom_line(aes(group = 1),data = density_sample_mean)
 
-ggplot2::ggsave("./res/Figs/js_prey_den_est_SP07.png", width = 6, height = 4, unit = "in")
+ggplot2::ggsave("./res/Figs/js_prey_den_est_SP07.jpg", width = 6, height = 4, unit = "in")
 
 
 #### density in park ####
@@ -282,7 +282,7 @@ colnames(density_sample) <- years
 density_sample <- melt(density_sample)
 density_sample_mean <- aggregate(value~variable, data = density_sample, FUN = median)
 
-ggplot(density_sample, aes(x=variable, y=value)) + 
+js_prey_den_est_park <- ggplot(density_sample, aes(x=variable, y=value)) + 
   geom_violin() + 
   #geom_boxplot() +
   theme_classic() + 
@@ -291,5 +291,8 @@ ggplot(density_sample, aes(x=variable, y=value)) +
   geom_point(data = density_sample_mean) + 
   geom_line(aes(group = 1),data = density_sample_mean)
 
-ggplot2::ggsave("./res/Figs/js_prey_den_est_park.png", width = 6, height = 4, unit = "in")
+js_prey_den_est_park
+save(js_prey_den_est_park,file = "./res/Figs/js_prey_den_est_park.rda")
+
+ggplot2::ggsave( "./res/Figs/js_prey_den_est_park.jpg", width = 6, height = 4, unit = "in")
 
