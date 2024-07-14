@@ -72,12 +72,12 @@ load("./res/js_lock_stan_fit_07_range.rda")
 area_size <- nrow(JS_stan_data$grid_pts) # we have 1km^2 grids
 z <- rstan::extract(m_fit, c("z"))$z
 years <- 1:7+2014
-year_out <- 2
+year_out <- 0
 years_w_forcast <- 1:(7+year_out) + 2014 
 
 forecast_z <- forecast_js(m_fit, year_out, recruit_factor = 1)
 NN <- apply(z,c(1,3),function(w){sum(w==2)}) |> as.data.frame() # total population size
-NN <- cbind(NN, apply(forecast_z,c(1,3),function(w){sum(w==2)}) |> as.data.frame())
+#NN <- cbind(NN, apply(forecast_z,c(1,3),function(w){sum(w==2)}) |> as.data.frame())
 colnames(NN) <- years_w_forcast
 NN <- melt(NN)
 NN_mean <- aggregate(value~variable, data = NN, FUN = median)
@@ -87,9 +87,8 @@ js_prey_avg_den_est_restricted_area <- ggplot(data = NN, aes(x=variable, y=value
   geom_violin() + 
   #geom_boxplot() +
   theme_classic() + 
-  xlab("Year") +
-  ylab("Density (/100km^2)") + 
-  
+  xlab("") +
+  ylab(expression(Density ~ group("(",100~km^2,")")))+
   geom_rect(aes(xmin=0.45, xmax=7.7+year_out, ymin=6.98-2.36, ymax=6.98+2.36), alpha = .002) + 
   geom_violin() + 
   geom_point(data = NN_mean) + 
@@ -98,16 +97,29 @@ js_prey_avg_den_est_restricted_area <- ggplot(data = NN, aes(x=variable, y=value
              linetype=2) + 
   geom_label(x = 0.99, y = 9.25, label = "Salom-Perez\n et al. 2007",
              #color="", 
-             size=2.5 ) #+ 
+             size=2.5 ) + 
+  theme(panel.grid.major.y = element_line(),
+        panel.grid.minor.y = element_line()) #+ 
   #geom_vline(xintercept = 7.5, lty = 2)
 dev.off()
 #ggplot2::ggsave("./res/Figs/js_prey_avg_den_est_restricted_area.png", width = 6, height = 4, unit = "in")
 
+
 ### combine with Fig2 
 load("./res/Figs/js_prey_den_est_park.rda")
+js_prey_den_est_park <- js_prey_den_est_park + 
+  theme(panel.grid.major.y = element_line(),
+        panel.grid.minor.y = element_line(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + 
+  xlab("") + 
+  ylab(expression(Density ~ "in" ~ park ~ group("(",100~km^2,")"))) 
+  
 library(ggpubr)
 jpeg("./res/Figs/js_prey_avg_den_est_restricted_area_comb.jpg", width = 6, height = 5, unit = "in", res = 500)
-ggarrange(js_prey_den_est_park, js_prey_avg_den_est_restricted_area, nrow = 2, labels="AUTO", align = "hv")
+ggarrange(js_prey_den_est_park + theme(plot.margin = unit(c(0,0.1,0,0), 'lines')), 
+          js_prey_avg_den_est_restricted_area + theme(plot.margin = unit(c(0,0.1,0,0), 'lines')), 
+          nrow = 2, labels=c("(a)","(b)"), align = "hv")
 dev.off()
 
 

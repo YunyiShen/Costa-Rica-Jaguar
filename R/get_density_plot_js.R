@@ -38,11 +38,14 @@ ggplot(NN, aes(x=variable, y=value/area_size * 100)) +
   geom_violin() + 
   #geom_boxplot() +
   theme_classic() + 
-  xlab("Year") +
-  ylab("Density (/100km^2)") + 
+  xlab("") +
+  #ylab(paste0("Density (/100km",expression(km^2),")")) + 
+  ylab(expression(Density ~ group("(",100~km^2,")")))+
   geom_point(data = NN_mean) + 
   geom_line(aes(group = 1),data = NN_mean) + 
-  geom_vline(xintercept = 7.5, lty = 2)
+  geom_vline(xintercept = 7.5, lty = 2) + 
+  theme(panel.grid.major.y = element_line(),
+        panel.grid.minor.y = element_line())
   #geom_rect(aes(xmin=7.5, xmax=9.5, ymin=0, ymax=3), alpha = .0002) 
 dev.off()
 
@@ -53,11 +56,13 @@ ggplot(NN, aes(x=variable, y=value)) +
   geom_violin() + 
   #geom_boxplot() +
   theme_classic() + 
-  xlab("Year") +
+  xlab("") +
   ylab("Population size") + 
   geom_point(data = NN_mean) + 
   geom_line(aes(group = 1),data = NN_mean)+ 
-  geom_vline(xintercept = 7.5, lty = 2)
+  geom_vline(xintercept = 7.5, lty = 2) + 
+  theme(panel.grid.major.y = element_line(),
+        panel.grid.minor.y = element_line())
 dev.off()
 #ggplot2::ggsave("./res/Figs/js_prey_pop_est.jpg", width = 6, height = 4, unit = "in")
 
@@ -65,8 +70,8 @@ dev.off()
 #### local density ####
 s <- rstan::extract(m_fit, c("s"))$s
 density_est <- list()
-jpeg("./res/Figs/js_prey_den_est.jpg", width = 8.5 * 1.5, height = 4 * 1.5, units = "in",res = 500)
-par(mfrow = c(2,4),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
+jpeg("./res/Figs/js_prey_den_est.jpg", width = 7.5 * 1.2, height = 4 * 1.2, units = "in",res = 500)
+par(mfrow = c(2,4),mar = c(.5,.5,1.7,.5), mgp = c(1.5, 0.5, 0))
 for(i in 1:7){
   density_est[[i]] <- JSdensity(s,z,JS_stan_data$grid_pts,i,TRUE,
                     nx = 46, ny = 37, main = i+2014, 
@@ -76,16 +81,17 @@ for(i in 1:7){
                     Yu = max(JS_stan_data$grid_pts[,2])+.2,
                     plotit = FALSE
                     )
-  fields::image.plot(density_est[[i]]$grid$xg, 
-            density_est[[i]]$grid$yg, 
-            density_est[[i]]$Dn, 
-            zlim = c(0.,30), xlab = "", ylab = "", 
-            main = i+2014,
-            col = gray.colors(30, start = 0., 
-                    end = 0.9, gamma = .4, rev = TRUE), legend.mar = 7)
-  points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[,,i])>0,], pch = 2)
+  image(density_est[[i]]$grid$xg, 
+        density_est[[i]]$grid$yg, 
+        density_est[[i]]$Dn, 
+        zlim = c(0.,30), xlab = "", ylab = "", 
+        main = i+2014,
+        col = gray.colors(30, start = 0., 
+                          end = 0.9, gamma = .4, rev = TRUE), xaxt='n', yaxt='n')
+  
+  points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[,,i])>0,], pch = 1)
   for(j in 1:13){ # 13 seen individuals
-    points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = j+2, col = "blue")
+    points(grid_objs$traplocs[rowSums(JS_stan_data$y [j,,,i])>0,], pch = 19)
   }
   points(JS_stan_data$grid_pts, pch = 20, 
          col = adjustcolor("red", alpha.f = 0.2), cex = 0.3)
@@ -93,16 +99,28 @@ for(i in 1:7){
   plot(as.data.frame(old_trap_polygon$geometry)/grid_objs$scaling, add = T, lty = 2)
   plot(as.data.frame(old_trap_polygon_inner$geometry)/grid_objs$scaling, add = T, lty = 2)
   if(i==1){
-    legend("topright", legend = c("deployed traps",
-                                  "seen individuals",
-                                  "grid points in study area",
-                                  "Salom-Perez et al. 2007"),
-           pch = c(2,3,20,NA), cex = c(1,1,1,1), 
+    legend("topright", legend = c("Camera traps",
+                                  "Jaguars detected",
+                                  "Grid points",
+                                  "Salom-Perez et al. (2007)"),
+           pch = c(1,19,20,NA), cex = c(1,1,1,1), 
            lty = c(NA,NA,NA,2),
-           col = c("black","blue",adjustcolor("red", alpha.f = 0.2),"black"))
+           col = c("black","black",adjustcolor("red", alpha.f = 0.2),"black"))
   }
 }
+
+fields::image.plot(density_est[[i]]$grid$xg, 
+                   density_est[[i]]$grid$yg, 
+                   density_est[[i]]$Dn, 
+                   zlim = c(0.,30), xlab = "", ylab = "", 
+                   main = i+2014,
+                   col = gray.colors(30, start = 0., 
+                                     end = 0.9, gamma = .4, rev = TRUE), 
+                   legend.mar = -40, legend.only = T)
+
 dev.off()
+
+
 
 
 #### sd ####
@@ -208,29 +226,30 @@ dev.off()
 
 #### parameters####
 params <- rstan::extract(m_fit, c("psi","gamma","phi","p0","alpha1","beta_env"))
-jpeg("./res/Figs/js_prey_vital_rate.jpg", width = 6 * 1.5, height = 4 * 1.5, units = "in",res = 500)
-par(mfrow = c(2,3),mar = c(2.5,2.5,1,.5), mgp = c(1.5, 0.5, 0))
+png("./res/Figs/js_prey_vital_rate.png", width = 6 * 1.2, height = 4 * 1.2, units = "in",res = 500)
+par(mfrow = c(2,3),mar = c(2.5,2.5,1.7,.5), mgp = c(1.5, 0.5, 0))
 
-plot(density(params$psi*60), main = "initial recruitment", xlab = "")
+plot(density(params$psi*60), main = "Initial recruitment", xlab = "")
 polygon(density(params$psi*60), col = "#9b9b9b")
 
-plot(density(params$gamma*60), main = "annual recruitment", xlab = "")
+plot(density(params$gamma*60), main = "Annual recruitment", xlab = "")
 polygon(density(params$gamma*60), col = "#9b9b9b")
 
-plot(density(params$phi), main = "annual survival", xlab = "")
+plot(density(params$phi), main = "Annual survival", xlab = "")
 polygon(density(params$phi), col = "#9b9b9b")
 
-plot(density(params$p0), main = "baseline detection rate", xlab = "")
+plot(density(params$p0), main = "Baseline detection rate", xlab = "")
 polygon(density(params$p0), col = "#9b9b9b")
 
-plot(density(params$alpha1), main = "detection rate decay", xlab = "")
+plot(density(params$alpha1), main = "Detection rate decay", xlab = "")
 polygon(density(params$alpha1), col = "#9b9b9b")
 
-plot(density(params$beta_env), main = "effect of prey", xlab = "", xlim = c(-5,2))
+plot(density(params$beta_env), main = "Effect of prey", xlab = "", xlim = c(-5,2))
 polygon(density(params$beta_env), col = "#9b9b9b")
 abline(v=0, lwd = 2)
-
 dev.off()
+
+
 lw_ci <- sapply(params, quantile, .025)
 hi_ci <- sapply(params, quantile, .975)
 mi_ci <- sapply(params, quantile, .5)
