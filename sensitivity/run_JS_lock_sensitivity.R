@@ -116,10 +116,10 @@ js_prey_den_est_park <- js_prey_den_est_park +
   ylab(expression(Density ~ "in" ~ park ~ group("(",100~km^2,")"))) 
   
 library(ggpubr)
-jpeg("./res/Figs/js_prey_avg_den_est_restricted_area_comb.jpg", width = 6, height = 5, unit = "in", res = 500)
+jpeg("./res/Figs/js_prey_avg_den_est_restricted_area_comb.jpg", width = 5.5/1.15, height = 4.5/1., unit = "in", res = 500)
 ggarrange(js_prey_den_est_park + theme(plot.margin = unit(c(0,0.1,0,0), 'lines')), 
           js_prey_avg_den_est_restricted_area + theme(plot.margin = unit(c(0,0.1,0,0), 'lines')), 
-          nrow = 2, labels=c("(a)","(b)"), align = "hv")
+          nrow = 2, labels=c("(a)","(b)"), align = "hv", hjust = -3.)
 dev.off()
 
 
