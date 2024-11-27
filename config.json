@@ -1,5 +1,5 @@
 {
-  "date":["2015-01-01","2021-12-31"], // date range of the data
+  "date":["2015-01-01","2023-12-31"], // date range of the data
   "occasion": 7, // number of days per secondary occasion
   "max_individual": 60, // data augmentation number of individuals
   "scaling": 10000, // how many meters to scale
@@ -7,7 +7,8 @@
   "resolution": 0.1, // grid size, in scale km
   "env_key_words": "wlp_rai", // key words to look for environment variable
   "stan_iters": 1000, // how many interations to run?
-  "model_name": "prey" // name of the model
+  "model_name": "prey", // name of the model
+  "detection": "./data/detections/JaguarEvents2015-2024_EDIT.csv" // path to the data
   
 
 }

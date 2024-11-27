@@ -1,5 +1,5 @@
 ## this for getting a detection history of individuals
-library(sp)
+library(sf)
 library(jsonlite)
 load("./clean_data/CT_loc.rda")
 load("./clean_data/jaguar.rda")
