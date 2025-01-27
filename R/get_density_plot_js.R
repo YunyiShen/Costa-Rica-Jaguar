@@ -87,7 +87,7 @@ for(i in 1:7){
         zlim = c(0.,30), xlab = "", ylab = "", 
         main = i+2014,
         col = gray.colors(30, start = 0., 
-                          end = 0.9, gamma = .4, rev = TRUE), xaxt='n', yaxt='n')
+                          end = 0.9, gamma = .4, rev = TRUE), xaxt='n', yaxt='n',font.main = 1)
   
   points(grid_objs$traplocs[rowSums(JS_stan_data$deploy[,,i])>0,], pch = 1)
   for(j in 1:13){ # 13 seen individuals
@@ -102,21 +102,32 @@ for(i in 1:7){
     legend("topright", legend = c("Camera traps",
                                   "Jaguars detected",
                                   "Grid points",
-                                  "Salom-Perez et al. (2007)"),
+                                  "Salom-Pérez et al. (2007)"),
            pch = c(1,19,20,NA), cex = c(1,1,1,1), 
            lty = c(NA,NA,NA,2),
            col = c("black","black",adjustcolor("red", alpha.f = 0.2),"black"))
   }
 }
 
+#fields::image.plot(density_est[[i]]$grid$xg, 
+#                   density_est[[i]]$grid$yg, 
+#                   density_est[[i]]$Dn, 
+#                   zlim = c(0.,30), xlab = "", ylab = "", 
+#                   main = i+2014,
+#                   col = gray.colors(30, start = 0., 
+#                                     end = 0.9, gamma = .4, rev = TRUE), 
+#                   legend.mar = -60, legend.only = T)
+
 fields::image.plot(density_est[[i]]$grid$xg, 
                    density_est[[i]]$grid$yg, 
-                   density_est[[i]]$Dn, 
+                   density_est[[i]]$Dn + NA, 
                    zlim = c(0.,30), xlab = "", ylab = "", 
-                   main = i+2014,
+                   main = "",
                    col = gray.colors(30, start = 0., 
                                      end = 0.9, gamma = .4, rev = TRUE), 
-                   legend.mar = -40, legend.only = T)
+                   axes = FALSE,    # Suppress axes
+                   box = FALSE,     # Remove bounding box
+                   legend.mar = 56.535, legend.only = F)
 
 dev.off()
 
@@ -226,25 +237,25 @@ dev.off()
 
 #### parameters####
 params <- rstan::extract(m_fit, c("psi","gamma","phi","p0","alpha1","beta_env"))
-png("./res/Figs/js_prey_vital_rate.png", width = 6 * 1.2, height = 4 * 1.2, units = "in",res = 500)
+jpeg("./res/Figs/js_prey_vital_rate.jpg", width = 6 * 1.2, height = 4 * 1.2, units = "in",res = 500)
 par(mfrow = c(2,3),mar = c(2.5,2.5,1.7,.5), mgp = c(1.5, 0.5, 0))
 
-plot(density(params$psi*60), main = "Initial recruitment", xlab = "")
+plot(density(params$psi*60), main = "Initial recruitment", xlab = "",font.main = 1)
 polygon(density(params$psi*60), col = "#9b9b9b")
 
-plot(density(params$gamma*60), main = "Annual recruitment", xlab = "")
+plot(density(params$gamma*60), main = "Annual recruitment", xlab = "",font.main = 1)
 polygon(density(params$gamma*60), col = "#9b9b9b")
 
-plot(density(params$phi), main = "Annual survival", xlab = "")
+plot(density(params$phi), main = "Annual survival", xlab = "",font.main = 1)
 polygon(density(params$phi), col = "#9b9b9b")
 
-plot(density(params$p0), main = "Baseline detection rate", xlab = "")
+plot(density(params$p0), main = "Baseline detection rate", xlab = "",font.main = 1)
 polygon(density(params$p0), col = "#9b9b9b")
 
-plot(density(params$alpha1), main = "Detection rate decay", xlab = "")
+plot(density(params$alpha1), main = "Detection rate decay", xlab = "",font.main = 1)
 polygon(density(params$alpha1), col = "#9b9b9b")
 
-plot(density(params$beta_env), main = "Effect of prey", xlab = "", xlim = c(-5,2))
+plot(density(params$beta_env), main = "Effect of prey", xlab = "", xlim = c(-5,2),font.main = 1)
 polygon(density(params$beta_env), col = "#9b9b9b")
 abline(v=0, lwd = 2)
 dev.off()
@@ -280,7 +291,7 @@ ggplot(density_sample, aes(x=variable, y=value)) +
   #geom_boxplot() +
   theme_classic() + 
   xlab("Year") +
-  ylab("Density (/100km^2) \n in Salom-Perez et al. 2007 range") + 
+  ylab("Density (/100km^2) \n in Salom-Pérez et al. 2007 range") + 
   geom_point(data = density_sample_mean) + 
   geom_line(aes(group = 1),data = density_sample_mean)
 
