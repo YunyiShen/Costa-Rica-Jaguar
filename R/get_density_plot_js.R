@@ -99,13 +99,13 @@ for(i in 1:7){
   plot(as.data.frame(old_trap_polygon$geometry)/grid_objs$scaling, add = T, lty = 2)
   plot(as.data.frame(old_trap_polygon_inner$geometry)/grid_objs$scaling, add = T, lty = 2)
   if(i==1){
-    legend("topright", legend = c("Camera traps",
-                                  "Jaguars detected",
-                                  "Grid points",
-                                  "Salom-Pérez et al. (2007)"),
-           pch = c(1,19,20,NA), cex = c(1,1,1,1), 
-           lty = c(NA,NA,NA,2),
-           col = c("black","black",adjustcolor("red", alpha.f = 0.2),"black"))
+    #legend("topright", legend = c("Camera traps",
+    #                              "Jaguars detected",
+    #                              "Grid points",
+    #                              "Salom-Pérez et al. (2007)"),
+    #       pch = c(1,19,20,NA), cex = c(1,1,1,1), 
+    #       lty = c(NA,NA,NA,2),
+    #       col = c("black","black",adjustcolor("red", alpha.f = 0.2),"black"))
   }
 }
 
@@ -118,6 +118,35 @@ for(i in 1:7){
 #                                     end = 0.9, gamma = .4, rev = TRUE), 
 #                   legend.mar = -60, legend.only = T)
 
+image(density_est[[i]]$grid$xg, 
+      density_est[[i]]$grid$yg, 
+      density_est[[i]]$Dn + NA, 
+      zlim = c(0.,30), xlab = "", ylab = "", 
+      main = "",
+      col = gray.colors(30, start = 0., 
+                        end = 0.9, gamma = .4, rev = TRUE), 
+      bty ="n",
+      xaxt='n', yaxt='n',font.main = 1)
+
+legend("topright", 
+       #inset=c(1.2, 0),
+       legend = c("Camera traps",
+                              "Jaguars detected",
+                              "Grid points",
+                              "Salom-Pérez et al.\n(2007)",
+                              "Corcovado\nNational Park"
+                  ),
+       pch = c(1,19,20,NA,NA), cex = c(1,1,1,1,1), 
+       lty = c(NA,NA,NA,2,NA),
+       fill=c(NA,NA,NA,NA,"gray80"),
+       border = c(NA,NA,NA,NA,"black"),
+       bty = "n",
+       col = c("black","black",adjustcolor("red", alpha.f = 0.2),
+               "black"),
+       y.intersp = 2, 
+       xjust = 0
+       )
+
 fields::image.plot(density_est[[i]]$grid$xg, 
                    density_est[[i]]$grid$yg, 
                    density_est[[i]]$Dn + NA, 
@@ -127,7 +156,22 @@ fields::image.plot(density_est[[i]]$grid$xg,
                                      end = 0.9, gamma = .4, rev = TRUE), 
                    axes = FALSE,    # Suppress axes
                    box = FALSE,     # Remove bounding box
-                   legend.mar = 56.535, legend.only = F)
+                   legend.mar = 54.535, 
+                   legend.line = 1,
+                   #legend.lab = "Density",
+                   legend.only = T, 
+                   legend.args = list(text = "Density",cex = 0.7,adj = -0.005, line = 0.3)
+                   )
+
+#legend("center", 
+#       inset=c(1.2, 0),
+#       legend = c("Camera traps",
+#                              "Jaguars detected",
+#                              "Grid points",
+#                              "Salom-Pérez et al. (2007)"),
+#       pch = c(1,19,20,NA), cex = c(1,1,1,1), 
+#       lty = c(NA,NA,NA,2),
+#       col = c("black","black",adjustcolor("red", alpha.f = 0.2),"black", xpd=TRUE))
 
 dev.off()
 
